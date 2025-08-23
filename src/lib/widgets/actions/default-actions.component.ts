@@ -19,8 +19,9 @@ export class DefaultActionsComponent {
     this._hide = hide;
   }
 
-  @Input()
-  search: string = '';
+  @Input() search: string = '';
+  @Input() startDate: string = '';
+  @Input() endDate: string = '';
 
   @Output() view: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() save: WatchedEventEmitter = new WatchedEventEmitter();
@@ -48,6 +49,8 @@ export class DefaultActionsComponent {
   @Output() exportAll: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() exportSelected: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() searchChange: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() dateChange: WatchedEventEmitter<{ start: string | null; end: string | null }> = new WatchedEventEmitter<{ start: string | null; end: string | null }>();
+  @Output() dateRangeChange: WatchedEventEmitter<{ start: Date | null; end: Date | null }> = new WatchedEventEmitter<{ start: Date | null; end: Date | null }>();
 
   onView(e) {
     this.view.emit({ event: e });
@@ -120,4 +123,26 @@ export class DefaultActionsComponent {
   onSearch() {
     this.searchChange.emit({ text: this.search });
   }
+
+  onDateChange(control: 'start' | 'end', event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (control === 'start') {
+      this.startDate = input.value || null;
+    } else {
+      this.endDate = input.value || null;
+    }
+
+    this.dateChange.emit({
+      start: this.startDate ?? null,
+      end: this.endDate ?? null
+    });
+  }
+
+  onDateRangeChange(range: Date[]) {
+    this.dateRangeChange.emit({
+      start: range[0] ?? null,
+      end: range[1] ?? null
+    });
+  }
+  
 }

@@ -11,7 +11,8 @@ export * from './models';
 export * from './pipes';
 export * from './services';
 export * from './widgets';
-export * from './types';
+export * from './store';
+//export * from './types';
 
 
 export * from './form/validation';

@@ -1,16 +1,17 @@
-import { AfterViewInit, Component, EventEmitter, Injector, Input, Output } from '@angular/core';
+import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output } from '@angular/core';
 import { ElementRef, ViewChild } from '@angular/core';
 import { Subject } from 'rxjs';
 import { RequestCriteria } from '@cartesianui/core';
 import { BaseComponent } from './base.component';
-import { ChildComponent } from './base.types';
+import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from './base.types';
 import { IPaginationModel } from '../models';
+import { RequestState } from '../store';
 
 @Component({
   template: ''
 })
 export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> implements AfterViewInit {
-  @ViewChild('dtContainer') dtContainer: ElementRef;
+  @ViewChild('dtContainer', { static: false }) dtContainer: ElementRef;
 
   // use if data is passed from parent
   @Input()
@@ -27,6 +28,10 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
   @Output()
   cbClick: EventEmitter<Array<TDataModel>> = new EventEmitter<Array<TDataModel>>();
 
+  columns: { key: string; label: string }[] = [];
+
+  headers: { name: string; prop?: string }[] = [];
+
   // Use to populate data directly (in add subscription)
   data: Array<TDataModel>;
 
@@ -40,12 +45,35 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
 
   isTableLoading = false;
 
-  constructor(injector: Injector) {
+  constructor(
+    protected injector: Injector,
+    @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TDataModel>
+  ) {
     super(injector);
     this.pagination = {
       currentPage: 1,
       perPage: 30
     };
+    //this.initTableColumnsAndHeaders();
+  }
+
+  protected getEntityConstructor(): EntityStatic<TDataModel> {
+    return this.injector.get(ENTITY_CONSTRUCTOR, null);
+  }
+
+  initTableColumnsAndHeaders(): void {
+    // console.log('initTableColumnsAndHeaders called', {
+    //   hasEntityConstructor: !!this.entityConstructor,
+    //   stack: new Error().stack
+    // });
+
+    if (!this.entityConstructor) {
+      console.warn('⚠️ No entity constructor provided.');
+      this.entityConstructor = this.getEntityConstructor();
+    }
+
+    this.columns = this.entityConstructor.getDataTableCols?.() ?? [];
+    this.headers = this.entityConstructor.getDataTableHeaders?.() ?? [];
   }
 
   ngAfterViewInit(): void {
@@ -70,6 +98,11 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
     this.selected = [...event.selected];
     this.cbClick.emit(this.selected);
     this.selectedChange.emit(this.selected);
+  }
+
+  onCreated() {
+    this.list();
+    this.hideChildComponent(false);
   }
 
   startLoading(): void {
@@ -111,4 +144,15 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
   }
 
   protected abstract list(): void;
+
+  protected handleBusyState(state: RequestState, element?: HTMLElement) {
+    const defaultElement = this.dtContainer?.nativeElement;
+
+    if (state.started) {
+      this.ui.setBusy(element ?? defaultElement);
+    }
+    if (state.completed || state.failed) {
+      this.ui.clearBusy(element ?? defaultElement);
+    }
+  }
 }

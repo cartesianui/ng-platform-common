@@ -47,6 +47,7 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
   childComponents: TChildComponent;
   childComponentSelected: ChildComponentSelected<TChildComponent> | false = false;
   childSelected: boolean = false;
+  selectedChildKey: keyof TChildComponent | null = null;
 
   constructor(injector: Injector) {
     this.localization = injector.get(LocalizationService);
@@ -82,21 +83,24 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
   }
 
   isComponentSelected(component: ChildComponentSelected<TChildComponent>): boolean {
+    console.log(this.childSelected, isEqual(this.childComponentSelected, component), component);
     if (this.childSelected && isEqual(this.childComponentSelected, component)) {
       return true;
     }
     return false;
   }
 
-  showChildComponent(component: ChildComponentSelected<TChildComponent>): void {
+  showChildComponent(component: ChildComponentSelected<TChildComponent>, key: keyof TChildComponent): void {
     this.childSelected = true;
     this.childComponentSelected = component;
+    this.selectedChildKey = key;
   }
 
   hideChildComponent(visible): void {
     if (visible === false) {
       this.childSelected = false;
       this.childComponentSelected = false;
+      this.selectedChildKey = null;
     }
   }
 }

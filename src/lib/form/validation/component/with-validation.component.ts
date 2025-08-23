@@ -1,4 +1,4 @@
-import { Component, ContentChild, OnInit } from '@angular/core';
+import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ValidateDirective } from '../directive/validate.directive';
 import { ValidationService } from '../validation.service';
 import { HttpNotificationService, IError } from '@cartesianui/core';
@@ -7,14 +7,16 @@ import { ValidationErrors } from '@angular/forms';
 @Component({
   selector: 'with-validation',
   templateUrl: './with-validation.component.html',
-  styleUrls: ['./with-validation.component.scss']
+  styleUrls: ['./with-validation.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WithValidationComponent implements OnInit {
   @ContentChild(ValidateDirective, { static: true }) validateDirective!: ValidateDirective;
 
   constructor(
     private validationOberverService: ValidationService,
-    private errorService: HttpNotificationService
+    private errorService: HttpNotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -38,27 +40,46 @@ export class WithValidationComponent implements OnInit {
   }
 
   setServerError(errors: IError, validateDirective) {
+    const control = validateDirective?.ngControl?.control;
     const fieldErrors = errors[validateDirective?.ngControl?.name];
-    if (fieldErrors) {
-      validateDirective?.ngControl?.control?.setErrors({ serverError: fieldErrors.concat('\n') } as ValidationErrors);
+
+    if (control && fieldErrors) {
+      control.setErrors({
+        ...control.errors,
+        serverError: this.formatErrorsAsHtml(fieldErrors)
+      } as ValidationErrors);
+
+      // 👇 Mark control as touched so error displays immediately
+      control.markAsTouched();
+      // Optionally: control.markAsDirty(); if your app uses that check
+      control.markAsDirty();
+
+      // 👉 Tell Angular to re-check the component
+      this.cdr.markForCheck();
+
     }
   }
 
-  humanReadable(name: string) {
-    // camel case to space separated words
-    const separatedWords = name.replace(/(?<=[a-zA-Z])(?=[A-Z])/g, ' ');
+  private humanReadable(name: string): string {
+    return name
+      .replace(/(?<=[a-zA-Z])(?=[A-Z])/g, ' ')
+      .split(' ')
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))
+      .join(' ');
+  }
 
-    const words = separatedWords.split(' ');
+  private formatErrorsAsHtml(errors: string | string[]): string {
+    const errorArray = Array.isArray(errors)
+      ? errors
+      : errors
+          .split(',')
+          .map((e) => e.trim())
+          .filter(Boolean);
 
-    const capitalizedWords = words.map((word, i) => {
-      if (word.length === 0) {
-        return '';
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    });
-
-    const humanReadableText = capitalizedWords.join(' ');
-
-    return humanReadableText;
+    return errorArray
+      .map((err) => err.replace(/[.,]$/, '').trim())
+      .filter(Boolean)
+      .map((err) => `${err}.`)
+      .join('<br>');
   }
 }

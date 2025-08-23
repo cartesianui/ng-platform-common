@@ -160,16 +160,35 @@ export class ValidationService {
    * @param values Array of values to look in
    * @returns true if control value is in the given array, false otherwise
    */
+
   inValidator(validValues: any[], multiple: boolean = false, separator: string = ','): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
-      let valid = null;
-      if (multiple) {
-        let values = control.value && typeof control.value === 'string' ? control.value.split(separator) : control.value;
-        valid = values.length ? values.every((value) => validValues.indexOf(value) !== -1) : true;
-      } else {
-        valid = validValues.indexOf(control.value) !== -1;
+    return (control: AbstractControl) => {
+      if (!control.value) {
+        return null; // Empty is valid unless required
       }
-      return valid ? null : { value: { value: 'Invalid value.' } };
+
+      const normalize = (val: any) => (typeof val === 'string' ? val.trim() : val);
+
+      if (multiple) {
+        let values: any[] = [];
+
+        if (typeof control.value === 'string') {
+          values = control.value
+            .split(separator)
+            .map(normalize)
+            .filter((v) => v !== '');
+        } else if (Array.isArray(control.value)) {
+          values = control.value.map(normalize);
+        } else {
+          return { value: { value: 'Invalid format.' } };
+        }
+
+        const allValid = values.every((v) => validValues.includes(v));
+        return allValid ? null : { value: { value: 'Invalid value.' } };
+      } else {
+        const val = normalize(control.value);
+        return validValues.includes(val) ? null : { value: { value: 'Invalid value.' } };
+      }
     };
   }
 
