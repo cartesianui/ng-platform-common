@@ -1,7 +1,6 @@
 import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output } from '@angular/core';
 import { ElementRef, ViewChild } from '@angular/core';
-import { Subject } from 'rxjs';
-import { RequestCriteria } from '@cartesianui/core';
+import { RequestCriteria, SearchForm } from '@cartesianui/core';
 import { BaseComponent } from './base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from './base.types';
 import { IPaginationModel } from '../models';
@@ -10,7 +9,7 @@ import { RequestState } from '../store';
 @Component({
   template: ''
 })
-export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> implements AfterViewInit {
+export abstract class ListingControlsComponent<TDataModel, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> implements AfterViewInit {
   @ViewChild('dtContainer', { static: false }) dtContainer: ElementRef;
 
   // use if data is passed from parent
@@ -32,12 +31,12 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
 
   headers: { name: string; prop?: string }[] = [];
 
+  searchForm: SearchForm;
+
   // Use to populate data directly (in add subscription)
   data: Array<TDataModel>;
 
-  criteria: RequestCriteria<TSearchFormModel>;
-
-  criteria$: Subject<RequestCriteria<TSearchFormModel>>;
+  criteria: RequestCriteria; //RequestCriteria;  // force initializer
 
   pagination: IPaginationModel;
 
@@ -54,35 +53,41 @@ export abstract class ListingControlsComponent<TDataModel, TSearchFormModel, TCh
       currentPage: 1,
       perPage: 30
     };
-    //this.initTableColumnsAndHeaders();
+    //this.loadEntityMetadata();
   }
 
   protected getEntityConstructor(): EntityStatic<TDataModel> {
     return this.injector.get(ENTITY_CONSTRUCTOR, null);
   }
 
-  initTableColumnsAndHeaders(): void {
-    // console.log('initTableColumnsAndHeaders called', {
+  loadEntityMetadata(): void {
+    // console.log('loadEntityMetadata called', {
     //   hasEntityConstructor: !!this.entityConstructor,
     //   stack: new Error().stack
     // });
 
     if (!this.entityConstructor) {
-      console.warn('⚠️ No entity constructor provided.');
+      console.warn('⚠️ No entity constructor provided (creating new).');
       this.entityConstructor = this.getEntityConstructor();
     }
 
     this.columns = this.entityConstructor.getDataTableCols?.() ?? [];
     this.headers = this.entityConstructor.getDataTableHeaders?.() ?? [];
+    this.searchForm = this.entityConstructor.getSearchForm?.() ?? {};
   }
 
   ngAfterViewInit(): void {
     this.list();
   }
 
-  initCriteria(searchForm: { new (): TSearchFormModel }): RequestCriteria<TSearchFormModel> {
-    return (this.criteria = new RequestCriteria<TSearchFormModel>(new searchForm()));
+  // initCriteria(searchForm: { new (): TSearchFormModel }): RequestCriteria<TSearchFormModel> {
+  //   return (this.criteria = new RequestCriteria<TSearchFormModel>(new searchForm()));
+  // }
+
+  initCriteria(): RequestCriteria {
+    return (this.criteria = new RequestCriteria(this.searchForm));
   }
+
 
   setPage(event): void {
     this.criteria.page(this.covertOffsetToPageNumber(event.offset));

@@ -3,15 +3,15 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, EMPTY } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Update,  } from '@ngrx/entity';
-import { ICartesianResponse, IHttpService } from '@cartesianui/core';
+import { ICartesianResponse, IHttpService, RequestCriteria } from '@cartesianui/core';
 import { createEntityActions } from './entity-actions.util';
 
-export abstract class BaseEntityEffects<TModel, TCriteria, TActions> {
+export abstract class BaseEntityEffects<TModel> {
   protected actions$ = inject(Actions);
 
   constructor(
-    protected httpService: IHttpService<TModel, TCriteria>,
-    protected actions: ReturnType<typeof createEntityActions<TModel, any, any>> // typed action creators
+    protected httpService: IHttpService<TModel>,
+    protected actions: ReturnType<typeof createEntityActions<TModel, any>> // typed action creators
   ) {}
 
   fetchAll$ = createEffect(() => {
@@ -19,7 +19,7 @@ export abstract class BaseEntityEffects<TModel, TCriteria, TActions> {
     return this.actions$.pipe(
       ofType(this.actions.fetchAll),
       map((action: any) => action.criteria),
-      switchMap((criteria: TCriteria) =>
+      switchMap((criteria: RequestCriteria) =>
         this.httpService.getAll(criteria).pipe(
           map(({ data, meta }: ICartesianResponse) =>
             this.actions.load({ entities: data, meta })

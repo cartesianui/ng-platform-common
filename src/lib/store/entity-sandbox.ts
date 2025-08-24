@@ -4,13 +4,13 @@ import { map, Observable } from 'rxjs';
 import { RequestCriteria } from '@cartesianui/core';
 import { Sandbox, RequestTypes, RequestType } from '@cartesianui/common';
 
-interface EntityConfig<T, TSearch> {
+interface EntityConfig<T> {
   selectors: any;
   actions: any;
   model: new (data: any) => T;
 }
 
-export class EntitySandbox<T, TSearch> extends Sandbox {
+export class EntitySandbox<T> extends Sandbox {
   entities$: Observable<T[]>;
   meta$: Observable<any>;
   selected$: Observable<T>;
@@ -23,7 +23,7 @@ export class EntitySandbox<T, TSearch> extends Sandbox {
   constructor(
     protected store: Store,
     protected override injector: Injector,
-    private config: EntityConfig<T, TSearch>
+    private config: EntityConfig<T>
   ) {
     super(injector);
 
@@ -42,7 +42,7 @@ export class EntitySandbox<T, TSearch> extends Sandbox {
     this.getState$ = this.store.pipe(select(selectors.get));
   }
 
-  fetchAll(criteria: RequestCriteria<TSearch>): void {
+  fetchAll(criteria: RequestCriteria): void {
     this.store.dispatch(this.config.actions.fetchAll({ criteria }));
   }
 

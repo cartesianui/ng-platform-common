@@ -1,6 +1,7 @@
-import { Directive, forwardRef, Attribute } from '@angular/core';
-import { Validator, AbstractControl, NG_VALIDATORS } from '@angular/forms';
+import { Directive, forwardRef, Attribute, HostListener, ElementRef, Input, Optional  } from '@angular/core';
+import { Validator, AbstractControl, NG_VALIDATORS, ValidationErrors, NgControl } from '@angular/forms';
 import { DatetimeService } from '../../../services/datetime.service';
+
 
 @Directive({
   selector: '[noWhiteSpace]',
@@ -285,10 +286,30 @@ export class NotInCollectionValidator implements Validator {
   ]
 })
 export class FloatValidator implements Validator {
-  constructor(@Attribute('float') public float: string) {}
+  /** Usage: <input float="2"> → allows up to 2 decimals */
+  @Input('float') decimalPlaces: number | null = null;
 
-  validate(control: AbstractControl): { [key: string]: any } {
-    return /^\d+(\.\d+){0,1}$/g.test(control.value) ? { float: `Value must be a number.` } : null;
+  validate(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value == null || value === '') {
+      return null; // let "required" validator handle empties
+    }
+
+    // build regex depending on allowed decimals
+    const regex = this.decimalPlaces !== null
+      ? new RegExp(`^\\d+(\\.\\d{1,${this.decimalPlaces}})?$`)
+      : /^\d+(\.\d+)?$/;
+
+    if (!regex.test(value)) {
+      return {
+        float: this.decimalPlaces !== null
+          ? `Value must be a number with up to ${this.decimalPlaces} decimal places.`
+          : 'Value must be a number.'
+      };
+    }
+
+    return null;
   }
 }
 

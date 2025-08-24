@@ -1,4 +1,4 @@
-import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, AfterContentInit } from '@angular/core';
 import { ValidateDirective } from '../directive/validate.directive';
 import { ValidationService } from '../validation.service';
 import { HttpNotificationService, IError } from '@cartesianui/core';
@@ -10,7 +10,7 @@ import { ValidationErrors } from '@angular/forms';
   styleUrls: ['./with-validation.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WithValidationComponent implements OnInit {
+export class WithValidationComponent implements OnInit, AfterContentInit {
   @ContentChild(ValidateDirective, { static: true }) validateDirective!: ValidateDirective;
 
   constructor(
@@ -23,7 +23,15 @@ export class WithValidationComponent implements OnInit {
     if (!this.validateDirective) {
       throw new Error('Without validate directive <with-validation></with-validation> is a useless component!');
     }
+   
     this.errorService.serverErrors$.subscribe((errors) => this.setServerError(errors, this.validateDirective));
+  }
+
+  ngAfterContentInit(): void {
+    const control = this.validateDirective.ngControl?.control;
+    if (control) {
+      control.statusChanges.subscribe(() => this.cdr.markForCheck());
+    }
   }
 
   get errorMessage(): string | null {

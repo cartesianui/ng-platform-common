@@ -4,12 +4,12 @@ import { Update } from '@ngrx/entity';
 import { IError, RequestCriteria } from '@cartesianui/core';
 import { ResponseMeta } from '@cartesianui/common';
 
-export function createEntityActions<TModel, TSearch, TName extends string>(entityName: TName) {
+export function createEntityActions<TModel, TName extends string>(entityName: TName) {
   return createActionGroup({
     source: `${entityName}/API` as any,
     events: {
       'Load': props<{ entities: TModel[]; meta: ResponseMeta }>(),
-      'Fetch All': props<{ criteria: RequestCriteria<TSearch> }>(),
+      'Fetch All': props<{ criteria: RequestCriteria }>(),
       'Fetch By Id': props<{ id: string }>(),
 
       //quick CRUD actions

@@ -1,4 +1,5 @@
 import { FormControl, FormGroup, ValidatorFn } from '@angular/forms';
+import { SearchForm } from '@cartesianui/core';
 import Deserializable from './deserializeable.interface';
 import { DatetimeService, DateFormat } from '../services';
 
@@ -327,5 +328,16 @@ export class ParentModel implements Deserializable {
 
   static readableName(key: string): string {
     return key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+  }
+
+
+
+
+  static get searchForm(): SearchForm {
+    return {};
+  };
+
+  static getSearchForm(): SearchForm {
+    return this.searchForm;
   }
 }

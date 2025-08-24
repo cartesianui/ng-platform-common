@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Injector, Input, OnChanges, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Injector, Input, OnChanges, OnInit, Output } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { TypeaheadMatch } from 'ngx-bootstrap/typeahead';
 import { BaseComponent } from '../../components/base.component';
@@ -13,7 +13,7 @@ import { ValidationService } from '../../form/validation';
 })
 
 //export class LookupWidgetComponent<T> extends SelectControlValueAccessor implements OnChanges, ControlValueAccessor, Validator {
-export class LookupWidgetComponent<T> implements OnChanges {
+export class LookupWidgetComponent<T> implements OnChanges, OnInit {
   @Input() optionField: string = 'name'; // namig convention origin from typeaheadOptionField
 
   @Input() options: Array<T> = [];
@@ -36,9 +36,14 @@ export class LookupWidgetComponent<T> implements OnChanges {
 
   constructor(
     protected injector: Injector,
-    protected formValidator: ValidationService
-  ) {
-    //super(injector);
+    protected formValidator: ValidationService,
+    protected cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.formControl.statusChanges.subscribe(() => {
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnChanges() {

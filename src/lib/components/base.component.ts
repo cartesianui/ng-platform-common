@@ -83,7 +83,7 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
   }
 
   isComponentSelected(component: ChildComponentSelected<TChildComponent>): boolean {
-    console.log(this.childSelected, isEqual(this.childComponentSelected, component), component);
+    // console.log(this.childSelected, isEqual(this.childComponentSelected, component), component);
     if (this.childSelected && isEqual(this.childComponentSelected, component)) {
       return true;
     }
