@@ -1,4 +1,4 @@
-import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, QueryList, ContentChildren } from '@angular/core';
+import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, QueryList, ContentChildren, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { RepeaterItemDirective } from './repeater-item.directive';
 
 @Component({
@@ -9,7 +9,7 @@ import { RepeaterItemDirective } from './repeater-item.directive';
         <i class="fa fa-plus"></i>
       </button>
     </div>
-    <div *ngFor="let item of internalData; let i = index" class="row align-items-start mb-2">
+    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="row align-items-start mb-2">
       <div class="col">
         <ng-container *ngTemplateOutlet="template; context: getContext(item, i)"></ng-container>
       </div>
@@ -26,7 +26,8 @@ import { RepeaterItemDirective } from './repeater-item.directive';
     </div>
 
     <ng-content></ng-content>
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RepeaterControlsComponent<TDataModel> {
 
@@ -42,6 +43,11 @@ export class RepeaterControlsComponent<TDataModel> {
   
   //   @ViewChildren('container', { read: ViewContainerRef }) containers!: QueryList<ViewContainerRef>;
   //   private collectedOutputs: TOutput[] = [];
+
+  constructor(
+    private cdr: ChangeDetectorRef
+  ) {}
+
   //   ngAfterViewInit(): void {
   //     this.containers.forEach((container, index) => {
   //       const compRef: ComponentRef<any> = container.createComponent(this.component);
@@ -78,6 +84,12 @@ export class RepeaterControlsComponent<TDataModel> {
     };
   }
 
+
+  trackByIndex(index: number, item: TDataModel): number {
+    return index;
+    // return (item as any).id;
+  }
+
   updateItemAtIndex(index: number, value: any): void {
     this.updateItem(value, index); // call your existing logic
   }
@@ -85,20 +97,38 @@ export class RepeaterControlsComponent<TDataModel> {
   updateItem(value: TDataModel, index: number) {
     this.internalData[index] = value;
     this.dataChange.emit(this.internalData);
+    // this.cdr.markForCheck();
   }
 
   add() {
     const newItem = {} as TDataModel; // Create an empty item (customize this)
     this.internalData.push(newItem);
     this.dataChange.emit(this.internalData);
+    // this.cdr.markForCheck();
   }
 
   remove(index: number) {
     this.internalData.splice(index, 1);
     this.dataChange.emit(this.internalData);
+    // this.cdr.markForCheck();
   }
 
   
+   // ⚠️ NOTE:
+  // this.itemDirectives is a QueryList (content projection).
+  // Its order is based on the DOM, not strictly tied to your `internalData` array.
+  // When items are added/removed/re-rendered, Angular may re-create elements,
+  // so the QueryList order can shift.
+  //
+  // That means `toArray()[index]` may not point to the same logical item
+  // as `internalData[index]`, even though the console shows the correct index.
+  // This explains why sometimes "index=1" still triggers the first item.
+  //
+  // ✅ Fixes:
+  // - Use `trackBy` in *ngFor to stabilize DOM reuse, OR
+  // - Store a stable identifier (e.g. item.id) and map directives by that.
+
+  // ✅ Used: used first way added trackByIndex to solve the order problem
   save(index: number) {
     const directive = this.itemDirectives?.toArray()[index];
     if (directive?.componentInstance?.save) {
