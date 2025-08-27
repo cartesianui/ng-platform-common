@@ -101,6 +101,10 @@ export function createEntityFeature<T>(
       })
     ),
     on(actions.clear, (state) => adapter.removeAll(state)),
+    on(actions.fetchFailure, (state) => ({
+      ...state,
+      get: { ...requestFailed }
+    })),
 
     // --- Clear specific request states
     on(actions.clearRequest, (state) => ({
