@@ -3,7 +3,7 @@ import { SearchForm } from '@cartesianui/core';
 import Deserializable from './deserializeable.interface';
 import { DatetimeService, DateFormat } from '../services';
 
-export type FormatterType = 'date' | 'jdate' | 'number' | 'currency' | 'pattern';
+export type FormatterType = 'date' | 'jdate' | 'number' | 'currency' | 'pattern' | 'func';
 
 export interface FormatterOptions {
   type: FormatterType;
@@ -12,6 +12,7 @@ export interface FormatterOptions {
   locale?: string;
   currency?: string;
   pattern?: string; // e.g. combo of two cols 'name (code)' or 'name'
+  func?: (value: any, row?: any) => any;  // 👈 custom callable
 }
 
 export interface FieldDescriptor {
@@ -95,6 +96,13 @@ export class ParentModel implements Deserializable {
           style: 'currency',
           currency: formatter?.currency || 'USD'
         }).format(Number(value));
+
+      // 👈 support callable
+      case 'func':   
+        if (typeof formatter.func === 'function') {
+          return formatter.func(value, this);  // pass value + row/model
+        }
+        return value;
 
       default:
         return value;
@@ -246,7 +254,11 @@ export class ParentModel implements Deserializable {
     const formatter = col?.opt?.formatter;
 
     if (formatter && formatter?.type) {
-      if (formatter?.type == 'pattern') {
+
+      if (formatter?.type === 'func') {
+        // 👈 call formatter with (value, row)
+        return formatter?.func(value, this);
+      } else if (formatter?.type == 'pattern') {
         // Case 1: display pattern for multiple fields
         return this.evalPattern(formatter.pattern);
       } else {
@@ -266,7 +278,10 @@ export class ParentModel implements Deserializable {
     const formatter = col?.opt?.formatter;
 
     if (formatter && formatter?.type) {
-      if (formatter?.type == 'pattern') {
+      if (formatter?.type === 'func') {
+        // 👈 call formatter with (value, row)
+        return formatter?.func(value, this);
+      } else if (formatter?.type == 'pattern') {
         // Case 1: display pattern for multiple fields
         return this.evalPattern(formatter.pattern);
       } else {
@@ -312,7 +327,10 @@ export class ParentModel implements Deserializable {
     const formatter = col?.opt?.formatter;
 
     if (formatter && formatter?.type) {
-      if (formatter?.type == 'pattern') {
+      if (formatter?.type === 'func') {
+        // 👈 call formatter with (value, row)
+        return formatter?.func(value, this);
+      } else if (formatter?.type == 'pattern') {
         // Case 1: display pattern for multiple fields
         return this.evalPattern(formatter.pattern);
       } else {
