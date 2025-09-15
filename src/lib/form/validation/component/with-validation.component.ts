@@ -1,7 +1,7 @@
 import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, AfterContentInit } from '@angular/core';
 import { ValidateDirective } from '../directive/validate.directive';
 import { ValidationService } from '../validation.service';
-import { HttpNotificationService, IError } from '@cartesianui/core';
+import { HttpErrorService, IError } from '@cartesianui/core';
 import { ValidationErrors } from '@angular/forms';
 
 @Component({
@@ -15,7 +15,7 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
 
   constructor(
     private validationOberverService: ValidationService,
-    private errorService: HttpNotificationService,
+    private errorService: HttpErrorService,
     private cdr: ChangeDetectorRef
   ) {}
 

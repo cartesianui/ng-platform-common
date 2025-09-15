@@ -4,7 +4,7 @@ import { Location } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import {
-  AppConstants,
+  AppConfig,
   LocalizationService,
   PermissionCheckerService,
   FeatureCheckerService,
@@ -14,9 +14,9 @@ import {
   TenancyService,
   UiService,
   SessionService,
-  HttpNotificationService
+  HttpErrorService
 } from '@cartesianui/core';
-import { ValidationService } from '../form/validation';
+import { ValidationService } from './form/validation';
 import { ChildComponent, ChildComponentSelected } from './base.types';
 import { isEqual } from 'lodash';
 
@@ -24,7 +24,7 @@ import { isEqual } from 'lodash';
   template: ''
 })
 export abstract class BaseComponent<TChildComponent extends ChildComponent = {}> implements OnDestroy {
-  localizationSourceName = AppConstants.localization.defaultLocalizationSourceName;
+  localizationSourceName = AppConfig.localization.defaultLocalizationSourceName;
 
   localization: LocalizationService;
   permissionCheckerService: PermissionCheckerService;
@@ -42,7 +42,7 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
   router: Router;
   route: ActivatedRoute;
   _location: Location; // underscrore to get rid if some conflict from some other model/class wth same name
-  errorService: HttpNotificationService;
+  errorService: HttpErrorService;
 
   childComponents: TChildComponent;
   childComponentSelected: ChildComponentSelected<TChildComponent> | false = false;
@@ -65,7 +65,7 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
     this.router = injector.get(Router);
     this.route = injector.get(ActivatedRoute);
     this._location = injector.get(Location);
-    this.errorService = injector.get(HttpNotificationService);
+    this.errorService = injector.get(HttpErrorService);
   }
 
   ngOnDestroy(): void {

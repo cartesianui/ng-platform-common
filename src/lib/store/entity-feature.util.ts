@@ -3,7 +3,7 @@ import { createFeature, createReducer, on, createSelector } from '@ngrx/store';
 import { EntityAdapter, createEntityAdapter, Update } from '@ngrx/entity';
 import { EntityStateExtended, requestCompleted, requestDefault, requestFailed, requestStarted, updateMetaState } from '@cartesianui/common';
 
-export function createEntityFeature<T>(
+export function entityFeature<T>(
   featureKey: string,
   actions: any // action group for the entity (typed loosely here)
 ) {

@@ -1,21 +1,21 @@
 import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, QueryList, ContentChildren, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { RepeaterItemDirective } from './repeater-item.directive';
+import { RepeatableDirective } from './repeatable.directive';
 
 @Component({
-  selector: 'app-repeater',
+  selector: 'repeatable-form',
   template: `
     <div class="mb-3 d-flex justify-content-end">
       <button type="button" class="btn btn-primary btn-sm" (click)="add()">
         <i class="fa fa-plus"></i>
       </button>
     </div>
-    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="row align-items-start mb-2">
+    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="row mb-2 align-items-stretch">
       <div class="col">
         <ng-container *ngTemplateOutlet="template; context: getContext(item, i)"></ng-container>
       </div>
 
-      <div class="col-auto d-flex flex-column gap-1">
-        <button type="button" class="btn btn-success btn-sm" (click)="save(i)" title="Save">
+      <div class="col-auto d-flex flex-column justify-content-center gap-2">
+        <button *ngIf="showSaveButton" type="button" class="btn btn-success btn-sm" (click)="save(i)" title="Save">
           <i class="fa fa-save"></i>
         </button>
 
@@ -29,9 +29,10 @@ import { RepeaterItemDirective } from './repeater-item.directive';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RepeaterControlsComponent<TDataModel> {
-
+export class RepeatableFormControlsComponent<TDataModel> {
   @Input() data: TDataModel[] = [];
+
+  @Input() showSaveButton: boolean = false;
 
   @Output() dataChange = new EventEmitter<TDataModel[]>();
 
@@ -39,32 +40,14 @@ export class RepeaterControlsComponent<TDataModel> {
 
   internalData: TDataModel[] = [];
 
-  @ContentChildren(RepeaterItemDirective, { descendants: true }) itemDirectives!: QueryList<RepeaterItemDirective>;
-  
-  //   @ViewChildren('container', { read: ViewContainerRef }) containers!: QueryList<ViewContainerRef>;
-  //   private collectedOutputs: TOutput[] = [];
+  @ContentChildren(RepeatableDirective, { descendants: true }) itemDirectives!: QueryList<RepeatableDirective>;
 
-  constructor(
-    private cdr: ChangeDetectorRef
-  ) {}
-
-  //   ngAfterViewInit(): void {
-  //     this.containers.forEach((container, index) => {
-  //       const compRef: ComponentRef<any> = container.createComponent(this.component);
-  //       compRef.instance.input = this.inputs[index]; // assume child has an `@Input() input`
-
-  //       // Subscribe to the output
-  //       compRef.instance.output?.subscribe((value: TOutput) => {
-  //         this.collectedOutputs[index] = value;
-  //         this.outputs.emit(this.collectedOutputs); // emit aggregated values
-  //       });
-  //     });
-  //   }
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterContentInit() {
     this.itemDirectives.forEach((dir, idx) => {
       // Assign the component instance manually
-      const element = (dir as any);
+      const element = dir as any;
       if (element) {
         dir.componentInstance = element;
         dir.index = idx;
@@ -76,6 +59,11 @@ export class RepeaterControlsComponent<TDataModel> {
     this.internalData = [...this.data];
   }
 
+  ngOnChanges() {
+    // Keep internalData in sync if parent replaces `data`
+    this.internalData = [...this.data];
+  }
+
   getContext(item: TDataModel, index: number) {
     return {
       $implicit: item,
@@ -83,7 +71,6 @@ export class RepeaterControlsComponent<TDataModel> {
       onChange: this.updateItemAtIndex.bind(this, index)
     };
   }
-
 
   trackByIndex(index: number, item: TDataModel): number {
     return index;
@@ -95,26 +82,26 @@ export class RepeaterControlsComponent<TDataModel> {
   }
 
   updateItem(value: TDataModel, index: number) {
-    this.internalData[index] = value;
-    this.dataChange.emit(this.internalData);
-    // this.cdr.markForCheck();
+    // Immutable replacement
+    const newData = this.internalData.map((item, i) => (i === index ? value : item));
+    this.internalData = newData;
+    this.dataChange.emit(newData);
   }
 
   add() {
-    const newItem = {} as TDataModel; // Create an empty item (customize this)
-    this.internalData.push(newItem);
-    this.dataChange.emit(this.internalData);
-    // this.cdr.markForCheck();
+    const newItem = {} as TDataModel;
+    const newData = [...this.internalData, newItem];
+    this.internalData = newData;
+    this.dataChange.emit(newData);
   }
 
   remove(index: number) {
-    this.internalData.splice(index, 1);
-    this.dataChange.emit(this.internalData);
-    // this.cdr.markForCheck();
+    const newData = this.internalData.filter((_, i) => i !== index);
+    this.internalData = newData;
+    this.dataChange.emit(newData);
   }
 
-  
-   // ⚠️ NOTE:
+  // ⚠️ NOTE:
   // this.itemDirectives is a QueryList (content projection).
   // Its order is based on the DOM, not strictly tied to your `internalData` array.
   // When items are added/removed/re-rendered, Angular may re-create elements,
@@ -137,5 +124,4 @@ export class RepeaterControlsComponent<TDataModel> {
       console.warn('Save method not found on component at index', index);
     }
   }
-
 }

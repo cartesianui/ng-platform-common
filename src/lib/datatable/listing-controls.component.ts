@@ -1,9 +1,9 @@
 import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output } from '@angular/core';
 import { ElementRef, ViewChild } from '@angular/core';
 import { RequestCriteria, SearchForm } from '@cartesianui/core';
-import { BaseComponent } from './base.component';
-import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from './base.types';
-import { IPaginationModel } from '../models';
+import { BaseComponent } from '../base.component';
+import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
+import { IPaginationModel } from './types';
 import { RequestState } from '../store';
 
 @Component({

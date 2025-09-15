@@ -1,10 +1,10 @@
 import { Directive, ElementRef } from '@angular/core';
 
 @Directive({
-  selector: '[repeaterItem]',
-  exportAs: 'repeaterItem'
+  selector: '[repeatable]',
+  exportAs: 'repeatable'
 })
-export class RepeaterItemDirective {
+export class RepeatableDirective {
   public componentInstance: any;
   public index!: number;
 

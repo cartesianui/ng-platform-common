@@ -4,7 +4,7 @@ import { Update } from '@ngrx/entity';
 import { IError, RequestCriteria } from '@cartesianui/core';
 import { ResponseMeta } from '@cartesianui/common';
 
-export function createEntityActions<TModel, TName extends string>(entityName: TName) {
+export function entityActions<TModel, TName extends string>(entityName: TName) {
   return createActionGroup({
     source: `${entityName}/API` as any,
     events: {
@@ -48,7 +48,7 @@ export function createEntityActions<TModel, TName extends string>(entityName: TN
 
 // Example usage
 // import { Product, ProductSearch } from '../models';
-// import { createEntityActions } from '../utils/entity-actions.util';
+// import { entityActions } from '../utils/entity-actions.util';
 
-// export const ProductActions = createEntityActions<Product, ProductSearch, 'Product'>('Product');
+// export const ProductActions = entityActions<Product, ProductSearch, 'Product'>('Product');
 

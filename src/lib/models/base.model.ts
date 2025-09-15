@@ -1,37 +1,11 @@
-import { FormControl, FormGroup, ValidatorFn } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { SearchForm } from '@cartesianui/core';
-import Deserializable from './deserializeable.interface';
+import { FieldDescriptor, FormatterOptions } from './types';
 import { DatetimeService, DateFormat } from '../services';
 
-export type FormatterType = 'date' | 'jdate' | 'number' | 'currency' | 'pattern' | 'func';
 
-export interface FormatterOptions {
-  type: FormatterType;
-  from?: DateFormat;
-  to?: DateFormat;
-  locale?: string;
-  currency?: string;
-  pattern?: string; // e.g. combo of two cols 'name (code)' or 'name'
-  func?: (value: any, row?: any) => any;  // 👈 custom callable
-}
-
-export interface FieldDescriptor {
-  key: string;
-  label: string;
-  opt?: {
-    link?: boolean;
-    width?: string; // e.g. '150'
-    formatter?: FormatterOptions;
-    validators?: ValidatorFn[];
-    required?: boolean;
-    hidden?: boolean;
-    readOnly?: boolean;
-    type?: 'text' | 'number' | 'date' | 'select' | 'checkbox';
-    [prop: string]: any;
-  };
-}
-
-export class ParentModel implements Deserializable {
+export class BaseModel {
+  
   constructor(data?) {
     if (data) {
       if (data instanceof FormGroup) {
@@ -77,7 +51,7 @@ export class ParentModel implements Deserializable {
   }
 
   getValue(property) {
-    return this.hasOwnProperty(property) ? this[property] ?? '' : property;
+    return this.hasOwnProperty(property) ? this[property] : null;
   }
 
   format(target: 'db' | 'form' | 'dt', value: any, formatter?: FormatterOptions): any {
@@ -150,7 +124,7 @@ export class ParentModel implements Deserializable {
   }
 
   evalPattern(pattern: string): string {
-    const cls = this.constructor as typeof ParentModel;
+    const cls = this.constructor as typeof BaseModel;
 
     return pattern.replace(/\b(\w+)\b/g, (key) => {
       const col = cls.getDataTableCol(key);
@@ -189,11 +163,11 @@ export class ParentModel implements Deserializable {
     });
 
     const entries = formFields.map((field: any) => {
-      const value = (this as any)[field.key] ?? null;
+      const value = (this as any)[field.key] ?? (field.defaultValue ?? null);
       return {
         key: field.key,
         label: field.label ?? field.key,
-        value,
+        defaultValue: value,
         opt: field.opt ?? {}
       };
     });
@@ -275,6 +249,11 @@ export class ParentModel implements Deserializable {
   // To use in form
   formFormatted(col: FieldDescriptor): string {
     let value = this.getValue(col.key);
+
+    if (value === null && col.defaultValue !== undefined) {
+      value = col.defaultValue;
+    }
+
     const formatter = col?.opt?.formatter;
 
     if (formatter && formatter?.type) {

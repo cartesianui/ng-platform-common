@@ -3,21 +3,17 @@ import { NgModule, ModuleWithProviders } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeSincePipe, FormatPipe } from './pipes';
-import { BusyDirective, AccessibleDirective } from './directive';
+import { BusyDirective, AccessibleDirective } from './directives';
 
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { DatetimeService } from './services';
 import { LookupWidgetComponent, DefaultActionsComponent } from './widgets';
-import { BaseComponent, RepeaterControlsComponent, RepeatableControlsComponent, RepeaterItemDirective } from './components';
-import { ConfigurableFormComponent } from './form/configurable/configurable-form.component';
-import { ButtonComponent } from './form/configurable/elements/button/button.component';
-import { InputComponent } from './form/configurable/elements/input/input.component';
-import { SelectComponent } from './form/configurable/elements/select/select.component';
-import { ConfigurableFieldDirective } from './form/configurable/directives/configurable-field.directive';
-
+import { BaseComponent } from './base.component';
 import {
+  RepeatableFormControlsComponent, RepeatableFormBaseComponent, RepeatableDirective,
+  ConfigurableFormComponent, ConfigurableFieldDirective, ButtonComponent, InputComponent, SelectComponent,
   NoWhiteSpaceValidator,
   EqualValidator,
   EmailValidator,
@@ -33,7 +29,7 @@ import {
   WithValidationComponent,
   ValidationService,
   RequireRelativeValidator
-} from './form/validation';
+} from './form'
 
 const VALIDATION_DIRECTIVES = [
   NoWhiteSpaceValidator,
@@ -55,9 +51,9 @@ const FORM_COMPONENTS = [ConfigurableFormComponent, ButtonComponent, InputCompon
 const WIDGET_COMPONENTS = [LookupWidgetComponent, DefaultActionsComponent];
 const COMMON_COMPONENTS = [
   BaseComponent, 
-  RepeaterControlsComponent, 
-  RepeatableControlsComponent, 
-  RepeaterItemDirective, 
+  RepeatableFormControlsComponent, 
+  RepeatableFormBaseComponent, 
+  RepeatableDirective, 
   ...FORM_COMPONENTS, 
   ...WIDGET_COMPONENTS, 
   ...VALIDATION_DIRECTIVES

@@ -4,14 +4,14 @@ import { of, EMPTY } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Update,  } from '@ngrx/entity';
 import { ICartesianResponse, IHttpService, RequestCriteria } from '@cartesianui/core';
-import { createEntityActions } from './entity-actions.util';
+import { entityActions } from './entity-actions.util';
 
-export abstract class BaseEntityEffects<TModel> {
+export abstract class EntityEffect<TModel> {
   protected actions$ = inject(Actions);
 
   constructor(
     protected httpService: IHttpService<TModel>,
-    protected actions: ReturnType<typeof createEntityActions<TModel, any>> // typed action creators
+    protected actions: ReturnType<typeof entityActions<TModel, any>> // typed action creators
   ) {}
 
   fetchAll$ = createEffect(() => {

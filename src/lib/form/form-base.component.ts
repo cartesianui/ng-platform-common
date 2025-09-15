@@ -1,8 +1,8 @@
 import { Inject, Optional, Component, Injector, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { BaseComponent } from './base.component';
-import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from './base.types';
-import { IHasForm } from './base.types';
+import { BaseComponent } from '../base.component';
+import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
+import { IHasForm } from '../base.types';
 import { RequestState } from '../store';
 @Component({
   template: ''
