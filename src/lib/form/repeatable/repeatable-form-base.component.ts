@@ -3,8 +3,9 @@ import { FormBaseComponent } from '../form-base.component';
 import { IHasForm } from '../../base.types';
 
 @Component({
-  template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    template: '',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export abstract class RepeatableFormBaseComponent<TEntity extends IHasForm<TEntity>> extends FormBaseComponent<TEntity>{
   @Input() data: TEntity;

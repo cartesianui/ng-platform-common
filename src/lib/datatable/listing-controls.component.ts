@@ -7,7 +7,8 @@ import { IPaginationModel } from './types';
 import { RequestState } from '../store';
 
 @Component({
-  template: ''
+    template: '',
+    standalone: false
 })
 export abstract class ListingControlsComponent<TDataModel, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> implements AfterViewInit {
   @ViewChild('dtContainer', { static: false }) dtContainer: ElementRef;

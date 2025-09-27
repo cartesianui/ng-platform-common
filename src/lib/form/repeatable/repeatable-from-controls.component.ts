@@ -2,8 +2,8 @@ import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, Quer
 import { RepeatableDirective } from './repeatable.directive';
 
 @Component({
-  selector: 'repeatable-form',
-  template: `
+    selector: 'repeatable-form',
+    template: `
     <div class="mb-3 d-flex justify-content-end">
       <button type="button" class="btn btn-primary btn-sm" (click)="add()">
         <i class="fa fa-plus"></i>
@@ -27,7 +27,8 @@ import { RepeatableDirective } from './repeatable.directive';
 
     <ng-content></ng-content>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class RepeatableFormControlsComponent<TDataModel> {
   @Input() data: TDataModel[] = [];

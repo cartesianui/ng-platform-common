@@ -21,7 +21,8 @@ import { ChildComponent, ChildComponentSelected } from './base.types';
 import { isEqual } from 'lodash';
 
 @Component({
-  template: ''
+    template: '',
+    standalone: false
 })
 export abstract class BaseComponent<TChildComponent extends ChildComponent = {}> implements OnDestroy {
   localizationSourceName = AppConfig.localization.defaultLocalizationSourceName;

@@ -29,16 +29,16 @@
 
   <!-- Right Side (Buttons) -->
   <div class="col-md-5 d-flex flex-wrap justify-content-end align-items-center gap-2">
-    <button *ngIf="view.subscriberCount && (!_hide?.view ?? true)" [disabled]="_disabled?.view ?? false" class="btn btn-info d-flex align-items-center gap-1" (click)="onView($event)">
+    <button *ngIf="view.subscriberCount && (!_hide?.view)" [disabled]="_disabled?.view ?? false" class="btn btn-info d-flex align-items-center gap-1" (click)="onView($event)">
       <i class="fa fa-info-circle"></i> View
     </button>
 
-    <button *ngIf="delete.subscriberCount && (!_hide?.delete ?? true)" [disabled]="_disabled?.delete ?? false" class="btn btn-danger d-flex align-items-center gap-1" (click)="onDelete($event)">
+    <button *ngIf="delete.subscriberCount && (!_hide?.delete)" [disabled]="_disabled?.delete ?? false" class="btn btn-danger d-flex align-items-center gap-1" (click)="onDelete($event)">
       <i class="fa fa-trash"></i> Delete
     </button>
 
     <button
-      *ngIf="export.subscriberCount && (!_hide?.export ?? true)"
+      *ngIf="export.subscriberCount && (!_hide?.export)"
       [disabled]="_disabled?.export ?? false"
       class="btn btn-outline-secondary d-flex align-items-center gap-1"
       (click)="onExport($event)"
@@ -46,12 +46,12 @@
       <i class="fa fa-file-export"></i> Export
     </button>
 
-    <button *ngIf="import.subscriberCount && (!_hide?.import ?? true)" [disabled]="_disabled?.import ?? false" class="btn btn-info d-flex align-items-center gap-1" (click)="onImport($event)">
+    <button *ngIf="import.subscriberCount && (!_hide?.import)" [disabled]="_disabled?.import ?? false" class="btn btn-info d-flex align-items-center gap-1" (click)="onImport($event)">
       <i class="fa fa-file-import"></i> Import
     </button>
 
     <button
-      *ngIf="deactivate.subscriberCount && (!_hide?.deactivate ?? true)"
+      *ngIf="deactivate.subscriberCount && (!_hide?.deactivate)"
       [disabled]="_disabled?.deactivate ?? false"
       class="btn btn-warning d-flex align-items-center gap-1"
       (click)="onDeactivate($event)"
@@ -60,7 +60,7 @@
     </button>
 
     <button
-      *ngIf="activate.subscriberCount && (!_hide?.activate ?? true)"
+      *ngIf="activate.subscriberCount && (!_hide?.activate)"
       [disabled]="_disabled?.activate ?? false"
       class="btn btn-success d-flex align-items-center gap-1"
       (click)="onActivate($event)"
@@ -69,7 +69,7 @@
     </button>
 
     <button
-      *ngIf="disable.subscriberCount && (!_hide?.disable ?? true)"
+      *ngIf="disable.subscriberCount && (!_hide?.disable)"
       [disabled]="_disabled?.disable ?? false"
       class="btn btn-warning d-flex align-items-center gap-1"
       (click)="onDisable($event)"
@@ -78,7 +78,7 @@
     </button>
 
     <button
-      *ngIf="enable.subscriberCount && (!_hide?.enable ?? true)"
+      *ngIf="enable.subscriberCount && (!_hide?.enable)"
       [disabled]="_disabled?.enable ?? false"
       class="btn btn-success d-flex align-items-center gap-1"
       (click)="onEnable($event)"
@@ -87,7 +87,7 @@
     </button>
 
     <button
-      *ngIf="attach.subscriberCount && (!_hide?.attach ?? true)"
+      *ngIf="attach.subscriberCount && (!_hide?.attach)"
       [disabled]="_disabled?.attach ?? false"
       class="btn btn-success d-flex align-items-center gap-1"
       (click)="onAttach($event)"
@@ -96,7 +96,7 @@
     </button>
 
     <button
-      *ngIf="detach.subscriberCount && (!_hide?.detach ?? true)"
+      *ngIf="detach.subscriberCount && (!_hide?.detach)"
       [disabled]="_disabled?.detach ?? false"
       class="btn btn-warning d-flex align-items-center gap-1"
       (click)="onDetach($event)"
@@ -105,7 +105,7 @@
     </button>
 
     <button
-      *ngIf="assign.subscriberCount && (!_hide?.assign ?? true)"
+      *ngIf="assign.subscriberCount && (!_hide?.assign)"
       [disabled]="_disabled?.assign ?? false"
       class="btn btn-success d-flex align-items-center gap-1"
       (click)="onAssign($event)"
@@ -114,7 +114,7 @@
     </button>
 
     <button
-      *ngIf="remove.subscriberCount && (!_hide?.remove ?? true)"
+      *ngIf="remove.subscriberCount && (!_hide?.remove)"
       [disabled]="_disabled?.remove ?? false"
       class="btn btn-warning d-flex align-items-center gap-1"
       (click)="onRemove($event)"
@@ -123,7 +123,7 @@
     </button>
 
     <button
-      *ngIf="revoke.subscriberCount && (!_hide?.revoke ?? true)"
+      *ngIf="revoke.subscriberCount && (!_hide?.revoke)"
       [disabled]="_disabled?.revoke ?? false"
       class="btn btn-warning d-flex align-items-center gap-1"
       (click)="onRevoke($event)"
@@ -131,16 +131,16 @@
       <i class="fa fa-ban"></i> Revoke
     </button>
 
-    <button *ngIf="edit.subscriberCount && (!_hide?.edit ?? true)" [disabled]="_disabled?.edit ?? false" class="btn btn-primary d-flex align-items-center gap-1" (click)="onEdit($event)">
+    <button *ngIf="edit.subscriberCount && (!_hide?.edit)" [disabled]="_disabled?.edit ?? false" class="btn btn-primary d-flex align-items-center gap-1" (click)="onEdit($event)">
       <i class="fa fa-pencil"></i> Edit
     </button>
 
-    <button *ngIf="save.subscriberCount && (!_hide?.save ?? true)" [disabled]="_disabled?.save ?? false" class="btn btn-primary d-flex align-items-center gap-1" (click)="onSave($event)">
+    <button *ngIf="save.subscriberCount && (!_hide?.save)" [disabled]="_disabled?.save ?? false" class="btn btn-primary d-flex align-items-center gap-1" (click)="onSave($event)">
       <i class="fa fa-save"></i> Save
     </button>
 
     <button
-      *ngIf="create.subscriberCount && (!_hide?.create ?? true)"
+      *ngIf="create.subscriberCount && (!_hide?.create)"
       [disabled]="_disabled?.create ?? false"
       class="btn btn-primary d-flex align-items-center gap-1"
       (click)="onCreate($event)"
@@ -149,7 +149,7 @@
     </button>
 
     <button
-      *ngIf="update.subscriberCount && (!_hide?.update ?? true)"
+      *ngIf="update.subscriberCount && (!_hide?.update)"
       [disabled]="_disabled?.update ?? false"
       class="btn btn-primary d-flex align-items-center gap-1"
       (click)="onUpdate($event)"

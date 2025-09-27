@@ -2,9 +2,10 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange } from 
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 
 @Component({
-  selector: 'default-actions, page-actions',
-  styleUrls: ['./default-actions.component.scss'],
-  templateUrl: './default-actions.component.html'
+    selector: 'default-actions, page-actions',
+    styleUrls: ['./default-actions.component.scss'],
+    templateUrl: './default-actions.component.html',
+    standalone: false
 })
 export class DefaultActionsComponent {
   _disabled: { [key: string]: boolean };

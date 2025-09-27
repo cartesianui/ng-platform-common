@@ -3,8 +3,9 @@ import { FormGroup } from '@angular/forms';
 import { IFormField } from '../../models/form-field.model';
 
 @Component({
-  selector: 'form-button',
-  templateUrl: './button.component.html'
+    selector: 'form-button',
+    templateUrl: './button.component.html',
+    standalone: false
 })
 export class ButtonComponent {
   config: IFormField;

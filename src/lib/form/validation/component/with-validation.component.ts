@@ -5,10 +5,11 @@ import { HttpErrorService, IError } from '@cartesianui/core';
 import { ValidationErrors } from '@angular/forms';
 
 @Component({
-  selector: 'with-validation',
-  templateUrl: './with-validation.component.html',
-  styleUrls: ['./with-validation.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'with-validation',
+    templateUrl: './with-validation.component.html',
+    styleUrls: ['./with-validation.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class WithValidationComponent implements OnInit, AfterContentInit {
   @ContentChild(ValidateDirective, { static: true }) validateDirective!: ValidateDirective;

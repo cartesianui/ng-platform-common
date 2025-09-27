@@ -4,8 +4,9 @@ import { ValidationService } from '../../../validation/validation.service';
 import { IFormField } from '../../models/form-field.model';
 
 @Component({
-  selector: 'form-input',
-  templateUrl: './input.component.html'
+    selector: 'form-input',
+    templateUrl: './input.component.html',
+    standalone: false
 })
 export class InputComponent implements OnInit, AfterViewChecked {
   @Input() config: IFormField;

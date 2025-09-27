@@ -5,7 +5,8 @@ import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types'
 import { IHasForm } from '../base.types';
 import { RequestState } from '../store';
 @Component({
-  template: ''
+    template: '',
+    standalone: false
 })
 export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> {
   @ViewChild('formContainer', { static: false }) formContainer!: ElementRef;

@@ -3,7 +3,8 @@ import { NgControl } from '@angular/forms';
 
 // Usage: input[validate], textarea[validate], select[validate], lookup-widget[validate]
 @Directive({
-  selector: '[validate]',
+    selector: '[validate]',
+    standalone: false
 })
 export class ValidateDirective {
   @Input() controlName?: string; 

@@ -6,10 +6,11 @@ import { ControlValueAccessor, SelectControlValueAccessor, NG_VALUE_ACCESSOR, NG
 import { ValidationService } from '../../form/validation';
 
 @Component({
-  selector: 'lookup-widget, .lookup-widget',
-  templateUrl: './lookup-widget.component.html',
-  styleUrls: ['./lookup-widget.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Default
+    selector: 'lookup-widget, .lookup-widget',
+    templateUrl: './lookup-widget.component.html',
+    styleUrls: ['./lookup-widget.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Default,
+    standalone: false
 })
 
 //export class LookupWidgetComponent<T> extends SelectControlValueAccessor implements OnChanges, ControlValueAccessor, Validator {

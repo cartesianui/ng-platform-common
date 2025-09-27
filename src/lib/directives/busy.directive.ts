@@ -2,7 +2,8 @@ import { Directive, ElementRef, Input } from '@angular/core';
 import { UiService } from '@cartesianui/core';
 
 @Directive({
-  selector: '[busy]'
+    selector: '[busy]',
+    standalone: false
 })
 export class BusyDirective {
   constructor(private _element: ElementRef, private _uiService: UiService) {}

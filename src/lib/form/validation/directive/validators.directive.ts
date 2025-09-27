@@ -4,14 +4,15 @@ import { DatetimeService } from '../../../services/datetime.service';
 
 
 @Directive({
-  selector: '[noWhiteSpace]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => NoWhiteSpaceValidator),
-      multi: true
-    }
-  ]
+    selector: '[noWhiteSpace]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => NoWhiteSpaceValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class NoWhiteSpaceValidator implements Validator {
   constructor(@Attribute('noWhiteSpace') public noWhiteSpace: string) {}
@@ -22,14 +23,15 @@ export class NoWhiteSpaceValidator implements Validator {
 }
 
 @Directive({
-  selector: '[equalTo][formControlName],[equalTo][formControl],[equalTo][ngModel]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => EqualValidator),
-      multi: true
-    }
-  ]
+    selector: '[equalTo][formControlName],[equalTo][formControl],[equalTo][ngModel]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => EqualValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class EqualValidator implements Validator {
   constructor(
@@ -76,14 +78,15 @@ export class EqualValidator implements Validator {
 }
 
 @Directive({
-  selector: '[requireRelative][formControlName],[requireRelative][formControl],[requireRelative][ngModel]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => RequireRelativeValidator),
-      multi: true
-    }
-  ]
+    selector: '[requireRelative][formControlName],[requireRelative][formControl],[requireRelative][ngModel]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => RequireRelativeValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class RequireRelativeValidator implements Validator {
   constructor(@Attribute('requireRelative') public requireRelative: string) {}
@@ -107,14 +110,15 @@ export class RequireRelativeValidator implements Validator {
 }
 
 @Directive({
-  selector: '[email]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => EmailValidator),
-      multi: true
-    }
-  ]
+    selector: '[email]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => EmailValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class EmailValidator implements Validator {
   constructor(@Attribute('email') public email: string) {}
@@ -127,14 +131,15 @@ export class EmailValidator implements Validator {
 }
 
 @Directive({
-  selector: '[domainName]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => DomainValidator),
-      multi: true
-    }
-  ]
+    selector: '[domainName]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => DomainValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class DomainValidator implements Validator {
   constructor(@Attribute('domainName') public domainName: string) {}
@@ -145,14 +150,15 @@ export class DomainValidator implements Validator {
 }
 
 @Directive({
-  selector: '[date]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => DateValidator),
-      multi: true
-    }
-  ]
+    selector: '[date]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => DateValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class DateValidator implements Validator {
   constructor(
@@ -190,14 +196,15 @@ export class DateValidator implements Validator {
  *
  */
 @Directive({
-  selector: '[age]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => AgeValidator),
-      multi: true
-    }
-  ]
+    selector: '[age]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => AgeValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class AgeValidator implements Validator {
   constructor(
@@ -232,14 +239,15 @@ export class AgeValidator implements Validator {
 }
 
 @Directive({
-  selector: '[inCollection]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => InCollectionValidator),
-      multi: true
-    }
-  ]
+    selector: '[inCollection]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => InCollectionValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class InCollectionValidator implements Validator {
   constructor(
@@ -258,14 +266,15 @@ export class InCollectionValidator implements Validator {
 }
 
 @Directive({
-  selector: '[notInCollection]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => NotInCollectionValidator),
-      multi: true
-    }
-  ]
+    selector: '[notInCollection]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => NotInCollectionValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class NotInCollectionValidator implements Validator {
   constructor(@Attribute('notInCollection') public collection: Array<string>) {}
@@ -276,14 +285,15 @@ export class NotInCollectionValidator implements Validator {
 }
 
 @Directive({
-  selector: '[float]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => FloatValidator),
-      multi: true
-    }
-  ]
+    selector: '[float]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => FloatValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class FloatValidator implements Validator {
   /** Usage: <input float="2"> → allows up to 2 decimals */
@@ -314,14 +324,15 @@ export class FloatValidator implements Validator {
 }
 
 @Directive({
-  selector: '[unicode]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => UnicodeValidator),
-      multi: true
-    }
-  ]
+    selector: '[unicode]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => UnicodeValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class UnicodeValidator implements Validator {
   constructor(@Attribute('unicode') public unicode: string) {}
@@ -332,14 +343,15 @@ export class UnicodeValidator implements Validator {
 }
 
 @Directive({
-  selector: '[numeric]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => NumericValidator),
-      multi: true
-    }
-  ]
+    selector: '[numeric]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => NumericValidator),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class NumericValidator implements Validator {
   constructor(@Attribute('numeric') public numeric: string) {}
