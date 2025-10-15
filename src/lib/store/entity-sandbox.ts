@@ -1,8 +1,9 @@
-import { Injector } from '@angular/core';
+import { Injector, Signal, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Store, select } from '@ngrx/store';
 import { map, Observable } from 'rxjs';
-import { RequestCriteria } from '@cartesianui/core';
-import { Sandbox, RequestTypes, RequestType } from '@cartesianui/common';
+import { RequestCriteriaOuput } from '@cartesianui/core';
+import { Sandbox, RequestTypes, RequestType, RequestState, ResponseMeta, Pagination } from '@cartesianui/common';
 
 interface EntityConfig<T> {
   selectors: any;
@@ -11,14 +12,36 @@ interface EntityConfig<T> {
 }
 
 export class EntitySandbox<T> extends Sandbox {
+
+  // Observables (backward compatible)
   entities$: Observable<T[]>;
-  meta$: Observable<any>;
+  meta$: Observable<ResponseMeta>;
   selected$: Observable<T>;
-  requestState$: Observable<any>;
-  createState$: Observable<any>;
-  updateState$: Observable<any>;
-  deleteState$: Observable<any>;
-  getState$: Observable<any>;
+  requestState$: Observable<RequestState>;
+  createState$: Observable<RequestState>;
+  updateState$: Observable<RequestState>;
+  deleteState$: Observable<RequestState>;
+  getState$: Observable<RequestState>;
+
+  // Signals (modern Angular)
+  readonly entities: Signal<T[]>;
+  readonly meta: Signal<ResponseMeta>;
+  readonly selected: Signal<T>;
+  readonly requestState: Signal<RequestState>;
+  readonly createState: Signal<RequestState>;
+  readonly updateState: Signal<RequestState>;
+  readonly deleteState: Signal<RequestState>;
+  readonly getState: Signal<RequestState>;
+
+  // Computed signals (optional convenience)
+  readonly hasEntities: Signal<boolean>;
+  readonly selectedId: Signal<string>;
+  readonly requestCompleted: Signal<boolean>;
+  readonly createCompleted: Signal<boolean>;
+  readonly updateCompleted: Signal<boolean>;
+  readonly deleteCompleted: Signal<boolean>;
+  readonly getCompleted: Signal<boolean>;
+  readonly pagination: Signal<Pagination>;
 
   constructor(
     protected store: Store,
@@ -40,9 +63,29 @@ export class EntitySandbox<T> extends Sandbox {
     this.updateState$ = this.store.pipe(select(selectors.update));
     this.deleteState$ = this.store.pipe(select(selectors.delete));
     this.getState$ = this.store.pipe(select(selectors.get));
+
+    // Signals (bridged from observables)
+    this.entities = toSignal(this.entities$, { initialValue: [] });
+    this.meta = toSignal(this.meta$, { initialValue: null });
+    this.selected = toSignal(this.selected$, { initialValue: null });
+    this.requestState = toSignal(this.requestState$, { initialValue: null });
+    this.createState = toSignal(this.createState$, { initialValue: null });
+    this.updateState = toSignal(this.updateState$, { initialValue: null });
+    this.deleteState = toSignal(this.deleteState$, { initialValue: null });
+    this.getState = toSignal(this.getState$, { initialValue: null });
+
+    // Computed convenience signals
+    this.hasEntities = computed(() => this.entities().length > 0);
+    // this.selectedId = computed(() => this.selected()?.id ?? null);
+    this.requestCompleted = computed(() => this.requestState()?.completed ?? false);
+    this.createCompleted = computed(() => this.createState()?.completed ?? false);
+    this.updateCompleted = computed(() => this.updateState()?.completed ?? false);
+    this.deleteCompleted = computed(() => this.deleteState()?.completed ?? false);
+    this.getCompleted = computed(() => this.getState()?.completed ?? false);
+    this.pagination = computed(() => this.meta()?.pagination ?? null);
   }
 
-  fetchAll(criteria: RequestCriteria): void {
+  fetchAll(criteria: RequestCriteriaOuput): void {
     this.store.dispatch(this.config.actions.fetchAll({ criteria }));
   }
 

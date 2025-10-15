@@ -1,6 +1,6 @@
-import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output } from '@angular/core';
+import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject } from '@angular/core';
 import { ElementRef, ViewChild } from '@angular/core';
-import { RequestCriteria, SearchForm } from '@cartesianui/core';
+import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
 import { BaseComponent } from '../base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
 import { IPaginationModel } from './types';
@@ -8,14 +8,20 @@ import { RequestState } from '../store';
 
 @Component({
     template: '',
-    standalone: false
+    providers:[RequestCriteriaFactory],
+    standalone: true
 })
 export abstract class ListingControlsComponent<TDataModel, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> implements AfterViewInit {
   @ViewChild('dtContainer', { static: false }) dtContainer: ElementRef;
 
+  protected criteriaFactory = inject(RequestCriteriaFactory);
+
   // use if data is passed from parent
   @Input()
   rows: Array<TDataModel>;
+
+  // Use to populate data directly (in add subscription)
+  data: Array<TDataModel>;
 
   @Input()
   selected: Array<TDataModel> = [];
@@ -34,10 +40,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
 
   searchForm: SearchForm;
 
-  // Use to populate data directly (in add subscription)
-  data: Array<TDataModel>;
-
-  criteria: RequestCriteria; //RequestCriteria;  // force initializer
+  criteria: RequestCriteria;
 
   pagination: IPaginationModel;
 
@@ -81,12 +84,9 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
     this.list();
   }
 
-  // initCriteria(searchForm: { new (): TSearchFormModel }): RequestCriteria<TSearchFormModel> {
-  //   return (this.criteria = new RequestCriteria<TSearchFormModel>(new searchForm()));
-  // }
-
   initCriteria(): RequestCriteria {
-    return (this.criteria = new RequestCriteria(this.searchForm));
+    //return (this.criteria = new RequestCriteria(this.searchForm));
+    return this.criteria = this.criteriaFactory.create(this.searchForm);
   }
 
 
@@ -140,13 +140,13 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   hydrateSearchCriteria(): void {
     this.subscriptions.push(
       this.route.queryParams.subscribe((params) => {
-        if (params['search']) this.criteria.urlParamsToSearchCriteria(params['search'] ?? '');
+        if (params['search']) this.criteria.initForm(params['search'] ?? '');
       })
     );
   }
 
   appendSearchCriteriaToUrl() {
-    this._location.replaceState(`${this.router.url.split('?')[0]}${this.criteria.searchCriteriaToUrlParams()}`);
+    this._location.replaceState(`${this.router.url.split('?')[0]}${this.criteria.toUrlParams()}`);
   }
 
   protected abstract list(): void;
