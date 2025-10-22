@@ -48,7 +48,7 @@ export class EntitySandbox<T> extends Sandbox {
     protected override injector: Injector,
     private config: EntityConfig<T>
   ) {
-    super(injector);
+    super();
 
     const { selectors, model } = this.config;
 

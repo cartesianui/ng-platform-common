@@ -1,7 +1,7 @@
 // utils/entity-actions.util.ts
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Update } from '@ngrx/entity';
-import { IError, RequestCriteria } from '@cartesianui/core';
+import { IError, RequestCriteriaOuput } from '@cartesianui/core';
 import { ResponseMeta } from '@cartesianui/common';
 
 export function entityActions<TModel, TName extends string>(entityName: TName) {
@@ -9,7 +9,7 @@ export function entityActions<TModel, TName extends string>(entityName: TName) {
     source: `${entityName}/API` as any,
     events: {
       'Load': props<{ entities: TModel[]; meta: ResponseMeta }>(),
-      'Fetch All': props<{ criteria: RequestCriteria }>(),
+      'Fetch All': props<{ criteria: RequestCriteriaOuput }>(),
       'Fetch By Id': props<{ id: string }>(),
 
       //quick CRUD actions

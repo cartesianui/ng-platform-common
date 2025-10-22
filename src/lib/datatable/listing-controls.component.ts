@@ -1,5 +1,5 @@
-import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject } from '@angular/core';
-import { ElementRef, ViewChild } from '@angular/core';
+import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect } from '@angular/core';
+import { ElementRef, ViewChild, runInInjectionContext, DestroyRef } from '@angular/core';
 import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
 import { BaseComponent } from '../base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
@@ -49,10 +49,9 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   isTableLoading = false;
 
   constructor(
-    protected injector: Injector,
     @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TDataModel>
   ) {
-    super(injector);
+    super();
     this.pagination = {
       currentPage: 1,
       perPage: 30
@@ -81,23 +80,31 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   }
 
   ngAfterViewInit(): void {
-    this.list();
+    // Manually trigger once after view init
+    // console.log('👀 View initialized — triggering first list()');
+    // this.list();
   }
 
   initCriteria(): RequestCriteria {
-    //return (this.criteria = new RequestCriteria(this.searchForm));
-    return this.criteria = this.criteriaFactory.create(this.searchForm);
-  }
+    this.criteria = this.criteriaFactory.create(this.searchForm);
 
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+        console.log('🔄 Criteria updated →', this.criteria?.queryString?.());
+        this.list();
+        this.appendSearchCriteriaToUrl();
+      });
+    });
+
+    return this.criteria;
+  }
 
   setPage(event): void {
     this.criteria.page(this.covertOffsetToPageNumber(event.offset));
-    this.list();
   }
 
   setSorting(event): void {
     this.criteria.orderBy(event.column.name, event.newValue);
-    this.list();
   }
 
   onSelect(event): void {
@@ -146,19 +153,33 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   }
 
   appendSearchCriteriaToUrl() {
-    this._location.replaceState(`${this.router.url.split('?')[0]}${this.criteria.toUrlParams()}`);
+    this._location.replaceState(`${this.router.url.split('?')[0]}${ '?' + this.criteria.queryString()}`);
   }
 
   protected abstract list(): void;
 
   protected handleBusyState(state: RequestState, element?: HTMLElement) {
     const defaultElement = this.dtContainer?.nativeElement;
+    const target = element ?? defaultElement;
+
+    if(!target)
+      return;
+
+    // console.log('⚙️ [BusyState] Handling state:', state.status, '→', state);
 
     if (state.started) {
-      this.ui.setBusy(element ?? defaultElement);
+      // console.log('🚀 Request started — setting busy state on:', target);
+      this.ui.setBusy(target);
     }
-    if (state.completed || state.failed) {
-      this.ui.clearBusy(element ?? defaultElement);
+
+    if (state.completed) {
+      // console.log('✅ Request completed — clearing busy state on:', target);
+      this.ui.clearBusy(target);
+    }
+
+    if (state.failed) {
+      // console.log('❌ Request failed — clearing busy state on:', target);
+      this.ui.clearBusy(target);
     }
   }
 }

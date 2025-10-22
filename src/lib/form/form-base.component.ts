@@ -23,10 +23,9 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
    * @param entityConstructor generic way to construct entity/domain model instance
    */
   constructor(
-    injector: Injector,
     @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TEntity>
   ) {
-    super(injector);
+    super();
   }
 
   protected initForm() {
@@ -56,13 +55,25 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
   // }
 
   protected handleFormBusyState(state: RequestState, element?: HTMLElement) {
-    const defaultElement = this.formContainer?.nativeElement
+    const defaultElement = this.formContainer?.nativeElement;
+    const target = element ?? defaultElement;
+
+    // console.log('⚙️ [BusyState] Handling state:', state.status, '→', state);
 
     if (state.started) {
-      this.ui.setBusy(element ?? defaultElement);
+      console.log('🚀 Request started — setting busy state on:', target);
+      this.ui.setBusy(target);
     }
-    if (state.completed || state.failed) {
-      this.ui.clearBusy(element ?? defaultElement);
+
+    if (state.completed) {
+      console.log('✅ Request completed — clearing busy state on:', target);
+      this.ui.clearBusy(target);
+    }
+
+    if (state.failed) {
+      console.log('❌ Request failed — clearing busy state on:', target);
+      this.ui.clearBusy(target);
     }
   }
+
 }
