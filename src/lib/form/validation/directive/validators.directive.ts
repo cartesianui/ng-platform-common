@@ -144,8 +144,10 @@ export class EmailValidator implements Validator {
 export class DomainValidator implements Validator {
   constructor(@Attribute('domainName') public domainName: string) {}
 
-  validate(control: AbstractControl): { [key: string]: any } {
-    return /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/g.test(control.value) ? { domainName: `This value is not a valid domain name` } : null;
+  validate(control: AbstractControl): { [key: string]: any } | null {
+    const pattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+    const valid = pattern.test(control.value ?? '');
+    return valid ? null : { domainName: `This value is not a valid domain name` };
   }
 }
 

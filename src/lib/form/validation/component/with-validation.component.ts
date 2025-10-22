@@ -6,8 +6,13 @@ import { ValidationErrors } from '@angular/forms';
 
 @Component({
     selector: 'with-validation',
-    templateUrl: './with-validation.component.html',
-    styleUrls: ['./with-validation.component.scss'],
+    template: `
+      <div class="component-wrapper">
+        <ng-content></ng-content>
+        <div class="invalid-feedback" [innerHTML]="errorMessage"></div>
+      </div>
+    `,
+    styles: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
@@ -37,6 +42,11 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
 
   get errorMessage(): string | null {
     const errors = Object.entries(this.validateDirective?.ngControl?.control?.errors || {});
+
+    // if(this.validateDirective?.ngControl?.name == "classId") {
+    //   console.log(this.validateDirective?.ngControl);
+    //   console.log(errors);
+    // }
 
     if (!this.validateDirective?.ngControl?.dirty && !this.validateDirective?.ngControl?.touched) return '';
     if (!errors.length) {
