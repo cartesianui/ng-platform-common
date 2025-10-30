@@ -29,19 +29,19 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Subscription, asapScheduler, observeOn } from 'rxjs';
 
 @Component({
-  selector: 'checkbox-form-control',
+  selector: 'choosable-control',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => CheckboxFormControlComponent),
+      useExisting: forwardRef(() => ChoosableControlComponent),
       multi: true
     }
   ],
   template: `
-   <div class="checkbox-form-control">
+   <div class="choosable-control">
       <div class="form-control p-2">
         <div *ngIf="items()?.length; else noOptions" 
              class="checkbox-grid"
@@ -68,7 +68,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
   `,
   styles: [
      `
-      .checkbox-form-control {
+      .choosable-control {
         width: 100%;
       }
 
@@ -88,7 +88,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
     `
   ]
 })
-export class CheckboxFormControlComponent<T = any>
+export class ChoosableControlComponent<T = any>
   implements OnDestroy, ControlValueAccessor
 {
   protected injector = inject(Injector);

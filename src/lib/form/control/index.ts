@@ -1,2 +1,2 @@
-export * from './lookup-form-control.component';
-export * from './checkbox-form-control.component';
+export * from './selectable-control.component';
+export * from './choosable-control.component';

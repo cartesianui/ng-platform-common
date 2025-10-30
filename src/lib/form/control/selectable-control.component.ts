@@ -6,19 +6,19 @@ import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
 import { Subscription, asapScheduler, observeOn } from 'rxjs';
 
 @Component({
-  selector: 'lookup-form-control',
+  selector: 'selecable-control',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, TypeaheadModule, HttpClientModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => LookupFormControlComponent),
+      useExisting: forwardRef(() => SelecableControlComponent),
       multi: true
     }
   ],
   template: `
-     <div class="lookup-form-control">
+     <div class="selecable-control">
       <div class="lookup-input-wrapper form-control d-flex flex-wrap align-items-center" (click)="focusInput()">
         <ng-container *ngIf="multi() && value() && value()?.length">
           <span *ngFor="let item of selectedValues(); trackBy: trackByKey" class="badge bg-primary me-1 mb-1 d-flex align-items-center">
@@ -49,7 +49,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
   `,
   styles: [
     `
-    .lookup-form-control {
+    .selecable-control {
       width: 100%;
     }
 
@@ -81,7 +81,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
   `
   ]
 })
-export class LookupFormControlComponent<T = any> implements OnDestroy, AfterViewInit, ControlValueAccessor {
+export class SelecableControlComponent<T = any> implements OnDestroy, AfterViewInit, ControlValueAccessor {
   @ViewChild('inputRef') inputRef!: ElementRef<HTMLInputElement>;
   protected injector = inject(Injector);
   protected renderer = inject(Renderer2);
@@ -408,7 +408,7 @@ export class LookupFormControlComponent<T = any> implements OnDestroy, AfterView
   // --- life cycle functions ---
 
   ngAfterViewInit() {
-    // console.log('DIAG: ngAfterViewInit running for LookupFormControlComponent');
+    // console.log('DIAG: ngAfterViewInit running for SelecableControlComponent');
     // Get NgControl safely (after Angular finishes DI resolution)
 
     this.ngControl = this.injector.get(NgControl, null);
