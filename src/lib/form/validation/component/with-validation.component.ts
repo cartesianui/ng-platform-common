@@ -70,6 +70,7 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
 
       // 👇 Mark control as touched so error displays immediately
       control.markAsTouched();
+      
       // Optionally: control.markAsDirty(); if your app uses that check
       control.markAsDirty();
 
