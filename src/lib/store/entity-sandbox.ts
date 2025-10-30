@@ -85,7 +85,12 @@ export class EntitySandbox<T> extends Sandbox {
     this.pagination = computed(() => this.meta()?.pagination ?? null);
   }
 
-  fetchAll(criteria: RequestCriteriaOuput): void {
+  fetchAll(criteria: RequestCriteriaOuput, useExisting: boolean = false): void {
+    // Skip if entities already loaded and user wants to use existing
+    if (useExisting && this.entities()?.length > 0) {
+      return;
+    }
+
     this.store.dispatch(this.config.actions.fetchAll({ criteria }));
   }
 
