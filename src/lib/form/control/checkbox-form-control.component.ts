@@ -29,7 +29,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Subscription, asapScheduler, observeOn } from 'rxjs';
 
 @Component({
-  selector: 'checkbox-from-control',
+  selector: 'checkbox-form-control',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
