@@ -36,11 +36,19 @@ export class EntitySandbox<T> extends Sandbox {
   // Computed signals (optional convenience)
   readonly hasEntities: Signal<boolean>;
   readonly selectedId: Signal<string>;
+
   readonly requestCompleted: Signal<boolean>;
   readonly createCompleted: Signal<boolean>;
   readonly updateCompleted: Signal<boolean>;
   readonly deleteCompleted: Signal<boolean>;
   readonly getCompleted: Signal<boolean>;
+
+  readonly requestFailed: Signal<boolean>;
+  readonly createFailed: Signal<boolean>;
+  readonly updateFailed: Signal<boolean>;
+  readonly deleteFailed: Signal<boolean>;
+  readonly getFailed: Signal<boolean>;
+
   readonly pagination: Signal<Pagination>;
 
   constructor(
@@ -82,6 +90,15 @@ export class EntitySandbox<T> extends Sandbox {
     this.updateCompleted = computed(() => this.updateState()?.completed ?? false);
     this.deleteCompleted = computed(() => this.deleteState()?.completed ?? false);
     this.getCompleted = computed(() => this.getState()?.completed ?? false);
+
+    this.requestFailed = computed(() => this.requestState()?.failed ?? false);
+    this.createFailed = computed(() => this.createState()?.failed ?? false);
+    this.updateFailed = computed(() => this.updateState()?.failed ?? false);
+    this.deleteFailed = computed(() => this.deleteState()?.failed ?? false);
+    this.getFailed = computed(() => this.getState()?.failed ?? false);
+    
+    this.pagination = computed(() => this.meta()?.pagination ?? null);
+
     this.pagination = computed(() => this.meta()?.pagination ?? null);
   }
 
