@@ -42,22 +42,23 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
 
   criteria: RequestCriteria;
 
-  pagination: IPaginationModel;
+  pagination: IPaginationModel = {
+    currentPage: 1,
+    perPage: 30
+  };
 
   searchText = '';
 
   isTableLoading = false;
 
-  constructor(
-    @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TDataModel>
-  ) {
-    super();
-    this.pagination = {
-      currentPage: 1,
-      perPage: 30
-    };
-    //this.loadEntityMetadata();
-  }
+  protected entityConstructor?: EntityStatic<TDataModel>
+
+  // @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TDataModel>
+  // constructor() {
+  //   super();
+  //   // this.pagination = ;
+  //   // this.loadEntityMetadata();
+  // }
 
   protected getEntityConstructor(): EntityStatic<TDataModel> {
     return this.injector.get(ENTITY_CONSTRUCTOR, null);
