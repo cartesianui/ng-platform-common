@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormControl, NG_VALUE_ACCESSOR, ControlValueAccess
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
-import { Subscription, asapScheduler, observeOn } from 'rxjs';
+import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'selectable-control',
@@ -37,7 +37,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
           type="text"
           class="flex-grow-1 border-0"
           [placeholder]="multi() && value()?.length ? '' : placeholder()"
-          [typeahead]="items()"
+          [typeahead]="this.url() ? items$ : items()"
           [typeaheadOptionField]="optionField()"
           (typeaheadOnSelect)="onSelect($event.item)"
           [formControl]="searchControl"
@@ -106,6 +106,9 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // --- Internal state ---
   items = signal<T[]>([]); // Available option (don't show selected one)
+
+  // used with url
+  items$: Observable<string>;
   
   // --- Computed state ---
   selectedValues = computed<T[]>(() => {
@@ -164,20 +167,33 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const dataValue = this.options();
 
       if (urlValue) {
-        this.subs.add(
-          this.http
-            .get<T[]>(urlValue)
-            .pipe(observeOn(asapScheduler))
-            .subscribe({
-              next: (res) => {
-                this.items.set(res ?? []);
-                this.cdr.markForCheck();
-              },
-              error: () => {
-                this.items.set([]);
-                this.cdr.markForCheck();
-              }
-            })
+        this.items$ = new Observable((observer: Observer<string | undefined>) => {
+          observer.next(this.searchControl.getRawValue());
+        }).pipe(
+          switchMap((query: string) => {
+            if (!query) return of([]);
+            // TODO: For Edit get/search and set using pendingValue
+            return this.http.get<any>(urlValue, {
+              params: { search: `name:${query}`, searchFields: `name:like` }
+            }).pipe(
+              map(res => res.data || []),
+              tap({
+                next: (items) => {
+                  this.items.set(items?? []);
+                  if (this.pendingValue) {
+                    this.setResolvedValue(this.pendingValue);
+                    this.pendingValue = null;
+                  } else {
+                    this.cdr.markForCheck();
+                  }
+                },
+                error: () => {
+                  this.items.set([]);
+                  this.cdr.markForCheck();
+                }
+              })
+            );
+          })
         );
       } else if (dataValue) {
         this.items.set(dataValue ?? []);
