@@ -141,6 +141,13 @@ export class BaseModel {
   /**
    * Override this in subclasses to define field descriptors
    * form generation.
+   * Example
+   * static override formFields?: FieldDescriptor[] = [
+   *   { key: 'name', label: 'Name', opt: { validators: [Validators.required, Validators.minLength(3)] } },
+   *   { key: 'openingBalance', label: 'Opening Bal' },
+   *   { key: 'code', label: 'Code' },
+   *   { key: 'openedAt', label: 'Opened At', opt: { formatter: { type: 'date'} } },
+   * ];
    */
   static formFields?: FieldDescriptor[] = [];
 
@@ -277,6 +284,16 @@ export class BaseModel {
   /**
    * Override this in subclasses to define field descriptors
    * for data tables
+   * Example:
+   * static override get dataTableCols(): FieldDescriptor[] {
+   *   return [
+   *     { key: 'id', label: 'Id', opt: { link: true, formatter: { type: 'pattern', pattern: 'name (code)'} } },
+   *     { key: 'accountingClass', label: 'Class' },
+   *     { key: 'openingBalance', label: 'Opening Balance', opt: { formatter: { type: 'currency' } } },
+   *     { key: 'openedAt', label: 'Opened At', opt: { formatter: { type: 'date', to: DateFormat.MED } } },
+   *     { key: 'balance', label: 'Balance', opt: { formatter: { type: 'currency', locale: 'en-PK', currency: 'PKR' } } }
+   *   ];
+   * }
    */
   static get dataTableCols(): FieldDescriptor[] {
     return [];
@@ -328,12 +345,19 @@ export class BaseModel {
   }
 
 
-
-
   static get searchForm(): SearchForm {
     return {};
   };
 
+  /**
+   * Example:
+   * static override get searchForm() {
+   *   return {
+   *     name: { column: 'name', operator: '=', value: null },
+   *     status: { column: 'status', operator: '=', value: null }
+   *   };
+   * }
+   */
   static getSearchForm(): SearchForm {
     return this.searchForm;
   }

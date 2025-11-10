@@ -1,4 +1,25 @@
-import { Component, ChangeDetectionStrategy, signal, effect, input, model, output, inject, forwardRef, AfterViewInit, OnDestroy, Injector, ChangeDetectorRef, Inject, Optional, SimpleChanges, computed, Renderer2, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  signal,
+  effect,
+  input,
+  model,
+  output,
+  inject,
+  forwardRef,
+  AfterViewInit,
+  OnDestroy,
+  Injector,
+  ChangeDetectorRef,
+  Inject,
+  Optional,
+  SimpleChanges,
+  computed,
+  Renderer2,
+  ViewChild,
+  ElementRef
+} from '@angular/core';
 import { ReactiveFormsModule, FormControl, NG_VALUE_ACCESSOR, ControlValueAccessor, NgControl, Validators, NG_VALIDATORS, Validator } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -18,17 +39,12 @@ import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, 
     }
   ],
   template: `
-     <div class="selectable-control">
+    <div class="selectable-control">
       <div class="lookup-input-wrapper form-control d-flex flex-wrap align-items-center" (click)="focusInput()">
         <ng-container *ngIf="multi() && value() && value()?.length">
           <span *ngFor="let item of selectedValues(); trackBy: trackByKey" class="badge bg-primary me-1 mb-1 d-flex align-items-center">
             {{ getOptionLabel(item) }}
-            <button
-              type="button"
-              class="btn-close btn-close-white btn-sm ms-1"
-              aria-label="Remove"
-              (click)="removeItem(item)">
-            </button>
+            <button type="button" class="btn-close btn-close-white btn-sm ms-1" aria-label="Remove" (click)="removeItem(item)"></button>
           </span>
         </ng-container>
 
@@ -49,36 +65,36 @@ import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, 
   `,
   styles: [
     `
-    .selectable-control {
-      width: 100%;
-    }
+      .selectable-control {
+        width: 100%;
+      }
 
-    .lookup-input-wrapper {
-      min-height: 38px;
-      cursor: text;
-    }
+      .lookup-input-wrapper {
+        min-height: 38px;
+        cursor: text;
+      }
 
-    .lookup-input-wrapper input {
-      outline: none;
-      min-width: 120px;
-      background-color: inherit;
-    }
+      .lookup-input-wrapper input {
+        outline: none;
+        min-width: 120px;
+        background-color: inherit;
+      }
 
-    .lookup-input-wrapper:focus-within {
-      border-color: #86b7fe;
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
+      .lookup-input-wrapper:focus-within {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
 
-    .badge {
-      display: flex;
-      align-items: center;
-      font-size: 0.8rem;
-    }
+      .badge {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+      }
 
-    .btn-close {
-      font-size: 0.6rem;
-    }
-  `
+      .btn-close {
+        font-size: 0.6rem;
+      }
+    `
   ]
 })
 export class SelectableControlComponent<T = any> implements OnDestroy, AfterViewInit, ControlValueAccessor {
@@ -109,7 +125,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // used with url
   items$: Observable<string>;
-  
+
   // --- Computed state ---
   selectedValues = computed<T[]>(() => {
     // console.log('selectedValues called');
@@ -121,7 +137,6 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     const ids = Array.isArray(rawValue) ? rawValue : [rawValue];
     return list.filter((item) => ids.includes(this.getOptionKey(item)));
   });
-
 
   readonly optionsEffect = effect(() => {
     const opts = this.options();
@@ -173,26 +188,29 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           switchMap((query: string) => {
             if (!query) return of([]);
             // TODO: For Edit get/search and set using pendingValue
-            return this.http.get<any>(urlValue, {
-              params: { search: `name:${query}`, searchFields: `name:like` }
-            }).pipe(
-              map(res => res.data || []),
-              tap({
-                next: (items) => {
-                  this.items.set(items?? []);
-                  if (this.pendingValue) {
-                    this.setResolvedValue(this.pendingValue);
-                    this.pendingValue = null;
-                  } else {
+            return this.http
+              .get<any>(urlValue, {
+                params: { search: `name:${query}`, searchFields: `name:like` }
+              })
+              .pipe(
+                map((res) => res.data || []),
+                tap({
+                  next: (items) => {
+                    //TODO: convert into camel case
+                    this.items.set(items ?? []);
+                    if (this.pendingValue) {
+                      this.setResolvedValue(this.pendingValue);
+                      this.pendingValue = null;
+                    } else {
+                      this.cdr.markForCheck();
+                    }
+                  },
+                  error: () => {
+                    this.items.set([]);
                     this.cdr.markForCheck();
                   }
-                },
-                error: () => {
-                  this.items.set([]);
-                  this.cdr.markForCheck();
-                }
-              })
-            );
+                })
+              );
           })
         );
       } else if (dataValue) {
@@ -204,7 +222,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     });
 
     // IMPORTANT: watch the search input so that when user clears it (backspace to empty),
-    // we propagate a null value to the parent form/control. 
+    // we propagate a null value to the parent form/control.
     // This fixes the "select triggers change but emptying doesn't" problem.
     this.subs.add(
       this.searchControl.valueChanges.pipe(observeOn(asapScheduler)).subscribe((val: any) => {
@@ -234,7 +252,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     this.setValue(valueToSet);
 
     // optional: reflect selection in the searchControl UI — usually you'd clear it
-    if(this.multi()) this.searchControl.patchValue('', { emitEvent: false });
+    if (this.multi()) this.searchControl.patchValue('', { emitEvent: false });
   }
 
   removeItem(item: T): void {
@@ -304,7 +322,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // single select: want single key stored, and label shown in searchControl
       const items = this.resolveItemsFromValue(value);
       const first = items.length ? items[0] : null;
-      const keyToStore = first ? this.getOptionKey(first) : (Array.isArray(value) ? (value[0] ?? null) : value);
+      const keyToStore = first ? this.getOptionKey(first) : Array.isArray(value) ? (value[0] ?? null) : value;
       this.value.set(keyToStore);
       // set searchControl text to the label if we found the item; otherwise set empty
       if (first) {
@@ -362,21 +380,21 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // --- CVA Interface ---
   writeValue(value: any): void {
-  // Always store pending or resolved value
-  if (!this.options()?.length) {
-    this.pendingValue = value;
-  } else {
-    this.setResolvedValue(value);
-  }
+    // Always store pending or resolved value
+    if (!this.options()?.length) {
+      this.pendingValue = value;
+    } else {
+      this.setResolvedValue(value);
+    }
 
-  // Also always clear when null/empty
-  if (value == null || (Array.isArray(value) && value.length === 0)) {
-    this.value.set(null);
-    this.searchControl.setValue('', { emitEvent: false });
-  }
+    // Also always clear when null/empty
+    if (value == null || (Array.isArray(value) && value.length === 0)) {
+      this.value.set(null);
+      this.searchControl.setValue('', { emitEvent: false });
+    }
 
-  this.cdr.markForCheck();
-}
+    this.cdr.markForCheck();
+  }
 
   registerOnChange(fn: any): void {
     this.onChange = fn;
@@ -391,7 +409,6 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     this.cdr.markForCheck();
   }
 
-  
   // ---- Helpers ---
   getOptionKey(item: T): any {
     return item?.[this.optionKey()];
@@ -438,9 +455,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const composed = Validators.compose(this.validators.map((v) => v.validate.bind(v)));
 
       const existing = this.ngControl.control.validator;
-      const composedValidator = existing
-        ? Validators.compose([existing, composed])
-        : composed;
+      const composedValidator = existing ? Validators.compose([existing, composed]) : composed;
 
       this.ngControl.control.setValidators(composedValidator);
       this.ngControl.control.updateValueAndValidity({ emitEvent: false });
@@ -454,7 +469,6 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       this.validators.forEach((v, i) => console.log(`DIAG: validator[${i}] ->`, v.constructor.name, '->', v.validate(ctrl)));
     }
   }
-
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
