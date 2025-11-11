@@ -14,17 +14,36 @@ import {
   ChangeDetectorRef,
   Inject,
   Optional,
-  SimpleChanges,
   computed,
   Renderer2,
   ViewChild,
   ElementRef
 } from '@angular/core';
-import { ReactiveFormsModule, FormControl, NG_VALUE_ACCESSOR, ControlValueAccessor, NgControl, Validators, NG_VALIDATORS, Validator } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormControl,
+  NG_VALUE_ACCESSOR,
+  ControlValueAccessor,
+  NgControl,
+  Validators,
+  NG_VALIDATORS,
+  Validator
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
-import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  Observer,
+  Subscription,
+  asapScheduler,
+  map,
+  observeOn,
+  of,
+  switchMap,
+  tap
+} from 'rxjs';
+import { AppConfig, ObjectUtils } from '@cartesianui/core';
 
 @Component({
   selector: 'selectable-control',
@@ -41,10 +60,15 @@ import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, 
   template: `
     <div class="selectable-control">
       <div class="lookup-input-wrapper form-control d-flex flex-wrap align-items-center" (click)="focusInput()">
-        <ng-container *ngIf="multi() && value() && value()?.length">
-          <span *ngFor="let item of selectedValues(); trackBy: trackByKey" class="badge bg-primary me-1 mb-1 d-flex align-items-center">
+        <ng-container *ngIf="multi() && computedValues() && computedValues()?.length">
+          <span *ngFor="let item of computedValues(); trackBy: trackByKey" class="badge bg-primary me-1 mb-1 d-flex align-items-center">
             {{ getOptionLabel(item) }}
-            <button type="button" class="btn-close btn-close-white btn-sm ms-1" aria-label="Remove" (click)="removeItem(item)"></button>
+            <button
+              type="button"
+              class="btn-close btn-close-white btn-sm ms-1"
+              aria-label="Remove"
+              (click)="removeItem(item)"
+            ></button>
           </span>
         </ng-container>
 
@@ -52,7 +76,7 @@ import { Observable, Observer, Subscription, asapScheduler, map, observeOn, of, 
           #inputRef
           type="text"
           class="flex-grow-1 border-0"
-          [placeholder]="multi() && value()?.length ? '' : placeholder()"
+          [placeholder]="multi() && computedValues()?.length ? '' : placeholder()"
           [typeahead]="this.url() ? items$ : items()"
           [typeaheadOptionField]="optionField()"
           (typeaheadOnSelect)="onSelect($event.item)"
@@ -116,46 +140,52 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   optionField = input('name');
   placeholder = input('Search...');
 
-  // --- Two-way bound model ---
+  // --- Two-way bound model (keys) ---
   value = model<T[keyof T][] | T[keyof T] | null>(null);
   valueChange = output<T[keyof T][] | T[keyof T] | null>();
+
+  // --- Two-way bound model (full object(s)) ---
+  entity = model<T[] | T | null>(null);
+  entityChange = output<T[] | T | null>();
 
   // --- Internal state ---
   items = signal<T[]>([]); // Available option (don't show selected one)
 
   // used with url
-  items$: Observable<string>;
+  items$: Observable<any>;
 
-  // --- Computed state ---
-  selectedValues = computed<T[]>(() => {
-    // console.log('selectedValues called');
-    const list = this.options() ?? [];
-    const rawValue = this.value();
-
-    if (!rawValue) return [];
-
-    const ids = Array.isArray(rawValue) ? rawValue : [rawValue];
-    return list.filter((item) => ids.includes(this.getOptionKey(item)));
+  // --- Computed state: computedValues used by template for rendering badges etc.
+  // Priority: use `entity()` if available, otherwise resolve from `value()`.
+  computedValues = computed<T[]>(() => {
+    const sel = this.entity();
+    if (sel == null) return [];
+    if (Array.isArray(sel)) return sel;
+    return [sel];
   });
 
+  // Keep previous behavior: also respond to options being set and resolve pending values
   readonly optionsEffect = effect(() => {
     const opts = this.options();
-    if (opts?.length && this.pendingValue) {
+    if (opts?.length && this.pendingRawValue != null) {
       // console.log('optionsEffect triggered', this.pendingValue);
-      this.setResolvedValue(this.pendingValue);
-      this.pendingValue = null;
+      // Resolve any pending raw value (from writeValue) once options are available
+      this.setResolvedValue(this.pendingRawValue);
+      this.pendingRawValue = null;
     }
   });
 
+  // watchSelection left in place for possible future use; uses computedValues to react
   watchSelection = effect(() => {
-    const vals = this.selectedValues();
+    const vals = this.computedValues();
+    // intentionally left minimal - UI updates come via computed and change detection
     // console.log('watchSelection Selection changed:', vals);
     // if(!this.multi()) this.searchControl.setValue(this.getOptionLabel(vals[0]));
   });
 
   searchControl = new FormControl('');
 
-  private pendingValue: any = null;
+  // store a pending value when options are not yet available (same as before)
+  private pendingRawValue: any = null;
 
   // --- CVA Callbacks (public for template usage) ---
   onChange: (value: any) => void = () => {};
@@ -193,15 +223,27 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                 params: { search: `name:${query}`, searchFields: `name:like` }
               })
               .pipe(
-                map((res) => res.data || []),
+                map((res) => {
+                  // check response keys conversion settings
+                  if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
+                    return ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
+                  }
+                  return res.data || []
+                }),
                 tap({
                   next: (items) => {
-                    //TODO: convert into camel case
                     this.items.set(items ?? []);
-                    if (this.pendingValue) {
-                      this.setResolvedValue(this.pendingValue);
-                      this.pendingValue = null;
+                    if (this.pendingRawValue != null) {
+                      // Resolve pending once we have items/options
+                      this.setResolvedValue(this.pendingRawValue);
+                      this.pendingRawValue = null;
                     } else {
+                      // Ensure selected is in sync with value (if value present)
+                      if (this.value() != null) {
+                        // attempt to refresh selected from available items/options
+                        // setResolvedValue will derive selected from value
+                        this.setResolvedValue(this.value());
+                      }
                       this.cdr.markForCheck();
                     }
                   },
@@ -215,22 +257,22 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         );
       } else if (dataValue) {
         this.items.set(dataValue ?? []);
+        // If we already have value stored, ensure `selected` is resolved from those options
+        if (this.value() != null) {
+          this.setResolvedValue(this.value());
+        }
         this.cdr.markForCheck();
       } else {
         this.items.set([]);
       }
     });
 
-    // IMPORTANT: watch the search input so that when user clears it (backspace to empty),
-    // we propagate a null value to the parent form/control.
-    // This fixes the "select triggers change but emptying doesn't" problem.
+    // Watch the search input so that when user clears it we propagate a null value to the parent
     this.subs.add(
       this.searchControl.valueChanges.pipe(observeOn(asapScheduler)).subscribe((val: any) => {
-        // consider empty or whitespace-only as "cleared"
         const isEmptyString = typeof val === 'string' && val.trim() === '';
         if (isEmptyString) {
-          // only propagate if the current selected value isn't already null
-          if (this.value() != null) {
+          if (this.value() != null || this.entity() != null) {
             this.setValue(null);
           }
         }
@@ -241,59 +283,78 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // --- Selection logic ---
   onSelect(item: T) {
     const key = this.getOptionKey(item);
-    const current = this.toArray(this.value()) as T[keyof T][];
+    // current keys array
+    const currentKeys = this.toArray(this.value()) as any[];
 
-    const exists = current.includes(key);
-    const updated = this.multi() ? (exists ? current.filter((k) => k !== key) : [...current, key]) : [key];
+    const exists = currentKeys.includes(key);
+    const updatedKeys = this.multi() ? (exists ? currentKeys.filter((k) => k !== key) : [...currentKeys, key]) : [key];
 
-    // If not multi, we just store the single value instead of array
-    const valueToSet = this.multi() ? updated : updated[0];
+    const valueToSet = this.multi() ? updatedKeys : updatedKeys[0];
 
+    // setValue will also set `selected` appropriately (resolve item objects)
     this.setValue(valueToSet);
 
-    // optional: reflect selection in the searchControl UI — usually you'd clear it
+    // For UX: clear input for multi (tags are visible)
     if (this.multi()) this.searchControl.patchValue('', { emitEvent: false });
   }
 
   removeItem(item: T): void {
     const key = this.getOptionKey(item);
-    const filtered = this.toArray(this.value()).filter((id) => id !== key);
-    this.setValue(this.multi() ? filtered : null);
+    const filteredKeys = this.toArray(this.value()).filter((id) => id !== key);
+    const valueToSet = this.multi() ? filteredKeys : null;
+    this.setValue(valueToSet);
   }
 
   // --- Core value propagation ---
   private setValue(value: any) {
-    // short-circuit if unchanged (avoid duplicate propagation)
+    // Avoid duplicate propagation if same (compare serialized)
     try {
       const prev = this.value();
       if (JSON.stringify(prev) === JSON.stringify(value)) {
+        // still ensure selected is in sync (in case selected drifted)
+        try {
+          const resolved = this.resolveItemsFromValue(value);
+          // set selected if different
+          const prevSelection = this.entity();
+          const newSelection = this.multi() ? resolved : resolved[0] ?? null;
+          if (JSON.stringify(prevSelection) !== JSON.stringify(newSelection)) {
+            this.entity.set(newSelection);
+            this.entityChange.emit(newSelection);
+          }
+        } catch {
+          // ignore
+        }
         return;
       }
     } catch {
-      // fallthrough if JSON.stringify fails
+      // fallthrough
     }
 
+    // Normalize & store the key(s) in `value`
     this.value.set(value);
     this.valueChange.emit(value);
 
-    // notify Angular forms via CVA callback (this is the canonical way)
+    // Resolve and store selected object(s) from available options/items where possible.
+    const resolvedItems = this.resolveItemsFromValue(value);
+    const selectedToSet = this.multi() ? resolvedItems : resolvedItems.length ? resolvedItems[0] : null;
+    this.entity.set(selectedToSet);
+    this.entityChange.emit(selectedToSet);
+
+    // notify Angular forms via CVA callback
     this.onChange(value);
 
     // mark touched (we consider a change to be an interaction)
-    // NOTE: some flows might not want to call onTouched() here; adjust if needed.
     this.onTouched();
 
-    // Only mark parent states and update validity — without calling setValue on parent control
-    // (calling parent.setValue would conflict with ControlValueAccessor expectations)
+    // Update parent control validity/status without setting parent value
     try {
       const ctrl = this.ngControl?.control;
       if (ctrl) {
         ctrl.markAsDirty();
-        // re-run validations
         ctrl.updateValueAndValidity({ emitEvent: true });
       }
     } catch {
-      // swallow potential control errors
+      // swallow
     }
 
     // ensure UI updates under OnPush
@@ -301,35 +362,49 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   }
 
   private setResolvedValue(value: any): void {
-    // value may be key(s) or full item(s). Normalize to same structure we use for propagation (keys).
-    // We also update searchControl: single -> label, array -> empty (tags shown from selectedValues)
-    if (value == null) {
-      // Clear everything
+    // This function expects `value` to be either keys or full item objects.
+    // It will set both `value` (keys) and `selected` (object(s)), and update the searchControl UI.
+
+    if (value == null || (Array.isArray(value) && value.length === 0)) {
+      // Clear both
       this.value.set(null);
-      this.searchControl.setValue('');
+      this.entity.set(null);
+      this.valueChange.emit(null);
+      this.entityChange.emit(null);
+      this.searchControl.setValue('', { emitEvent: false });
       this.cdr.markForCheck();
       return;
     }
 
     if (this.multi()) {
-      // expect array or single -> convert to array of keys
-      const items = this.resolveItemsFromValue(value);
-      const keys = items.map((i) => this.getOptionKey(i));
+      // Expecting array or single -> treat as array of keys or objects
+      const resolvedItems = this.resolveItemsFromValue(value);
+      const keys = resolvedItems.map((i) => this.getOptionKey(i)).filter((k) => k != null);
       this.value.set(keys);
-      // show no text when multi (tags are shown)
+      this.valueChange.emit(keys);
+
+      this.entity.set(resolvedItems);
+      this.entityChange.emit(resolvedItems);
+
+      // show no text for multi (tags are displayed)
       this.searchControl.patchValue('', { emitEvent: false });
     } else {
       // single select: want single key stored, and label shown in searchControl
-      const items = this.resolveItemsFromValue(value);
-      const first = items.length ? items[0] : null;
+      const resolvedItems = this.resolveItemsFromValue(value);
+      const first = resolvedItems.length ? resolvedItems[0] : null;
       const keyToStore = first ? this.getOptionKey(first) : Array.isArray(value) ? (value[0] ?? null) : value;
+
       this.value.set(keyToStore);
-      // set searchControl text to the label if we found the item; otherwise set empty
+      this.valueChange.emit(keyToStore);
+
+      this.entity.set(first);
+      this.entityChange.emit(first);
+
       if (first) {
-        this.searchControl.setValue(this.getOptionLabel(first));
+        this.searchControl.setValue(this.getOptionLabel(first), { emitEvent: false });
       } else {
-        // if we don't have the option object yet, try to show raw value as string (optional)
-        this.searchControl.setValue('');
+        // If we couldn't resolve the object (no matching option), show empty string
+        this.searchControl.setValue('', { emitEvent: false });
       }
     }
 
@@ -338,10 +413,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // Resolve item objects from a provided value (value can be keys or full item objects)
   private resolveItemsFromValue(value: any): T[] {
+    // All available candidate options: user-supplied options OR currently fetched items
     const allOptions = (this.options() ?? this.items() ?? []) as T[];
     const keys = Array.isArray(value) ? value : [value];
 
-    // If value elements are objects that look like options already, return them
+    // If value elements are objects that look like options already, return them (preserve order)
     const maybeObjects = keys.filter((k) => k && typeof k === 'object' && this.getOptionKey(k) != null);
     if (maybeObjects.length === keys.length) {
       return maybeObjects as T[];
@@ -358,18 +434,17 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         }
       });
       if (match) found.push(match);
+      // if not found, we don't invent objects — leave missing ones out
     }
     return found;
   }
 
   handleBlur() {
-    // propagate touched state to Angular forms
     this.onTouched();
     try {
       const ctrl = this.ngControl?.control;
       if (ctrl) {
         ctrl.markAsTouched();
-        // update validity so with-validation picks up the error immediately
         ctrl.updateValueAndValidity({ emitEvent: true });
       }
     } catch {
@@ -380,17 +455,22 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // --- CVA Interface ---
   writeValue(value: any): void {
-    // Always store pending or resolved value
-    if (!this.options()?.length) {
-      this.pendingValue = value;
+    // If options are not yet available, store pending and resolve later
+    if (!this.options()?.length && !(this.items() && this.items().length)) {
+      this.pendingRawValue = value;
     } else {
       this.setResolvedValue(value);
+      this.pendingRawValue = null;
     }
 
-    // Also always clear when null/empty
+    // Also clear both when null/empty
     if (value == null || (Array.isArray(value) && value.length === 0)) {
       this.value.set(null);
+      this.entity.set(null);
       this.searchControl.setValue('', { emitEvent: false });
+      // Emit clears to keep parent in sync (safe to emit here)
+      this.valueChange.emit(null);
+      this.entityChange.emit(null);
     }
 
     this.cdr.markForCheck();
@@ -411,7 +491,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // ---- Helpers ---
   getOptionKey(item: T): any {
-    return item?.[this.optionKey()];
+    try {
+      return item?.[this.optionKey()];
+    } catch {
+      return undefined;
+    }
   }
 
   getOptionLabel(item: T): string {
@@ -438,12 +522,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   focusInput() {
     this.inputRef?.nativeElement?.focus();
   }
+
   // --- life cycle functions ---
 
   ngAfterViewInit() {
-    // console.log('DIAG: ngAfterViewInit running for SelectableControlComponent');
-    // Get NgControl safely (after Angular finishes DI resolution)
-
+    // lazy DI for ngControl
     this.ngControl = this.injector.get(NgControl, null);
     // console.log('DIAG: ngControl =>', this.ngControl);
     // console.log('DIAG: ngControl.control =>', this.ngControl?.control);
@@ -451,22 +534,23 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     // console.log('DIAG: validators length =>', this.validators?.length);
 
     if (this.ngControl?.control && this.validators?.length) {
-      // console.log('DIAG: entering validator block ✅');
       const composed = Validators.compose(this.validators.map((v) => v.validate.bind(v)));
-
       const existing = this.ngControl.control.validator;
       const composedValidator = existing ? Validators.compose([existing, composed]) : composed;
 
       this.ngControl.control.setValidators(composedValidator);
       this.ngControl.control.updateValueAndValidity({ emitEvent: false });
 
-      this.ngControl.control.updateValueAndValidity({ emitEvent: false });
-
-      // DIAGNOSTICS — run each collected validator manually and log its result
+      // DIAGNOSTICS — optional (kept from original)
       const ctrl = this.ngControl!.control!;
       // console.log('DIAG: control.value =>', ctrl.value);
       // console.log('DIAG: control.validator(ctrl) =>', ctrl.validator ? ctrl.validator(ctrl) : null);
       this.validators.forEach((v, i) => console.log(`DIAG: validator[${i}] ->`, v.constructor.name, '->', v.validate(ctrl)));
+    }
+
+    // Ensure selected is in sync with value if options already exist
+    if (this.value() != null && (this.options() ?? this.items()).length) {
+      this.setResolvedValue(this.value());
     }
   }
 
