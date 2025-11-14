@@ -52,7 +52,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
           >
             <input
               type="{{ multi() ? 'checkbox' : 'radio' }}"
-              [name]="multi() ? optionKey() : 'lookup-radio'"
+              [name]="multi() ? optionKey() : radioGroupName"
               class="form-check-input me-2"
               [checked]="isSelected(item)"
               (change)="onToggle(item, $event.target.checked)"
@@ -113,6 +113,9 @@ export class ChoosableControlComponent<T = any>
 
   // --- Internal state ---
   items = signal<T[]>([]);
+  // Unique radio group name per component instance to prevent different
+  // instances' radio inputs from being grouped together by the browser.
+  readonly radioGroupName = `choosable-radio-${Math.random().toString(36).slice(2, 9)}`;
 
   readonly optionsEffect = effect(() => {
     const opts = this.options();
