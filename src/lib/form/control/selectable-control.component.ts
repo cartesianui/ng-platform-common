@@ -154,6 +154,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // used with url
   items$: Observable<any>;
 
+  searchControl = new FormControl('');
+
+  // store a pending value when options are not yet available (same as before)
+  private pendingRawValue: any = null;
+
   // --- Computed state: computedValues used by template for rendering badges etc.
   // Priority: use `entity()` if available, otherwise resolve from `value()`.
   computedValues = computed<T[]>(() => {
@@ -164,10 +169,17 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   });
 
   // Keep previous behavior: also respond to options being set and resolve pending values
+  // Track last options reference to avoid reacting to identical arrays (common when
+  // parent passes a freshly-created but equal array on each change detection).
+  private lastOptionsRef: T[] | null = null;
+
   readonly optionsEffect = effect(() => {
     const opts = this.options();
+    // If options reference hasn't changed, do nothing.
+    if (opts === this.lastOptionsRef) return;
+    this.lastOptionsRef = opts ?? null;
+
     if (opts?.length && this.pendingRawValue != null) {
-      // console.log('optionsEffect triggered', this.pendingValue);
       // Resolve any pending raw value (from writeValue) once options are available
       this.setResolvedValue(this.pendingRawValue);
       this.pendingRawValue = null;
@@ -181,11 +193,6 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     // console.log('watchSelection Selection changed:', vals);
     // if(!this.multi()) this.searchControl.setValue(this.getOptionLabel(vals[0]));
   });
-
-  searchControl = new FormControl('');
-
-  // store a pending value when options are not yet available (same as before)
-  private pendingRawValue: any = null;
 
   // --- CVA Callbacks (public for template usage) ---
   onChange: (value: any) => void = () => {};
@@ -308,9 +315,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // --- Core value propagation ---
   private setValue(value: any) {
     // Avoid duplicate propagation if same (compare serialized)
+    let isValueChanged = true;
     try {
       const prev = this.value();
       if (JSON.stringify(prev) === JSON.stringify(value)) {
+        isValueChanged = false;
         // still ensure selected is in sync (in case selected drifted)
         try {
           const resolved = this.resolveItemsFromValue(value);
@@ -340,8 +349,10 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     this.entity.set(selectedToSet);
     this.entityChange.emit(selectedToSet);
 
-    // notify Angular forms via CVA callback
-    this.onChange(value);
+    // notify Angular forms via CVA callback ONLY if value actually changed
+    if (isValueChanged) {
+      this.onChange(value);
+    }
 
     // mark touched (we consider a change to be an interaction)
     this.onTouched();
@@ -351,7 +362,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const ctrl = this.ngControl?.control;
       if (ctrl) {
         ctrl.markAsDirty();
-        ctrl.updateValueAndValidity({ emitEvent: true });
+        ctrl.updateValueAndValidity({ emitEvent: false });
       }
     } catch {
       // swallow
@@ -380,11 +391,30 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // Expecting array or single -> treat as array of keys or objects
       const resolvedItems = this.resolveItemsFromValue(value);
       const keys = resolvedItems.map((i) => this.getOptionKey(i)).filter((k) => k != null);
-      this.value.set(keys);
-      this.valueChange.emit(keys);
 
-      this.entity.set(resolvedItems);
-      this.entityChange.emit(resolvedItems);
+      // Avoid emitting if keys are identical to current value
+      try {
+        const curr = this.value();
+        if (JSON.stringify(curr) !== JSON.stringify(keys)) {
+          this.value.set(keys);
+          this.valueChange.emit(keys);
+        }
+      } catch {
+        this.value.set(keys);
+        this.valueChange.emit(keys);
+      }
+
+      // Update entity only when changed
+      try {
+        const currEntity = this.entity();
+        if (JSON.stringify(currEntity) !== JSON.stringify(resolvedItems)) {
+          this.entity.set(resolvedItems);
+          this.entityChange.emit(resolvedItems);
+        }
+      } catch {
+        this.entity.set(resolvedItems);
+        this.entityChange.emit(resolvedItems);
+      }
 
       // show no text for multi (tags are displayed)
       this.searchControl.patchValue('', { emitEvent: false });
@@ -394,11 +424,27 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const first = resolvedItems.length ? resolvedItems[0] : null;
       const keyToStore = first ? this.getOptionKey(first) : Array.isArray(value) ? (value[0] ?? null) : value;
 
-      this.value.set(keyToStore);
-      this.valueChange.emit(keyToStore);
+      try {
+        const curr = this.value();
+        if (JSON.stringify(curr) !== JSON.stringify(keyToStore)) {
+          this.value.set(keyToStore);
+          this.valueChange.emit(keyToStore);
+        }
+      } catch {
+        this.value.set(keyToStore);
+        this.valueChange.emit(keyToStore);
+      }
 
-      this.entity.set(first);
-      this.entityChange.emit(first);
+      try {
+        const currEntity = this.entity();
+        if (JSON.stringify(currEntity) !== JSON.stringify(first)) {
+          this.entity.set(first);
+          this.entityChange.emit(first);
+        }
+      } catch {
+        this.entity.set(first);
+        this.entityChange.emit(first);
+      }
 
       if (first) {
         this.searchControl.setValue(this.getOptionLabel(first), { emitEvent: false });
@@ -424,18 +470,35 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     }
 
     // Otherwise, treat keys as key values and find matching option objects
+    // If an item for a key isn't present in the available options (e.g. because
+    // items are coming from a search result), fall back to any previously
+    // selected entities stored in `this.entity()` so multi-select doesn't lose
+    // already-selected tags when they are not present in the current options.
     const found: T[] = [];
+    const prevSelection = this.entity();
+    const prevArr = prevSelection == null ? [] : Array.isArray(prevSelection) ? prevSelection : [prevSelection];
+
     for (const k of keys) {
-      const match = allOptions.find((opt) => {
+      let match: T | undefined = undefined;
+      try {
+        match = allOptions.find((opt) => this.getOptionKey(opt) === k);
+      } catch {
+        match = undefined;
+      }
+
+      // If not found in the current option set, try previously selected entities
+      if (!match && prevArr.length) {
         try {
-          return this.getOptionKey(opt) === k;
+          match = prevArr.find((opt) => this.getOptionKey(opt) === k);
         } catch {
-          return false;
+          match = undefined;
         }
-      });
+      }
+
       if (match) found.push(match);
-      // if not found, we don't invent objects — leave missing ones out
+      // if still not found, we don't invent objects — leave missing ones out
     }
+
     return found;
   }
 
