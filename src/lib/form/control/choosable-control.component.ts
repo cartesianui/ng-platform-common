@@ -66,27 +66,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
       </div>
     </div>
   `,
-  styles: [
-     `
-      .choosable-control {
-        width: 100%;
-      }
-
-      .checkbox-grid {
-        display: grid;
-        gap: 0.5rem 1rem;
-      }
-
-      .form-control {
-        min-height: 38px;
-      }
-
-      label {
-        user-select: none;
-        cursor: pointer;
-      }
-    `
-  ]
+  styleUrls: ['./choosable-control.component.scss']
 })
 export class ChoosableControlComponent<T = any>
   implements OnDestroy, ControlValueAccessor
