@@ -44,6 +44,7 @@ import {
   tap
 } from 'rxjs';
 import { AppConfig, ObjectUtils } from '@cartesianui/core';
+import { isUuid } from '../../helpers';
 
 @Component({
   selector: 'selectable-control',
@@ -132,8 +133,10 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   protected subs = new Subscription();
 
   // --- Inputs ---
-  url = input<string | null>(null);
+  url = input<string | null>(null); // backward compatibility
   options = input<T[] | null>(null);
+  optionsUrl = input<string | null>(null); // to get options
+  getByIdUrl = input<string | null>(null); // in case get by id url is different then options url
   ignoreOptions = input<T[]>([]);
   multi = input(false);
   optionKey = input<string>('id');
@@ -158,6 +161,9 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // store a pending value when options are not yet available (same as before)
   private pendingRawValue: any = null;
+
+  // Track last URL to know if we need to fetch by id
+  // private lastUrlValue: string | null = null;
 
   // --- Computed state: computedValues used by template for rendering badges etc.
   // Priority: use `entity()` if available, otherwise resolve from `value()`.
@@ -215,10 +221,18 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
     // Load items from URL or data (reactive)
     effect(() => {
-      const urlValue = this.url();
+      const urlValue = this.optionsUrl() ?? this.url();
       const dataValue = this.options();
 
       if (urlValue) {
+        // Track URL change to trigger id-based fetch if needed
+        // this.lastUrlValue = urlValue;
+
+        // If we have a pending value (initial value set), try to fetch it by id first
+        if (this.pendingRawValue != null && isUuid(this.pendingRawValue)) {
+          this.fetchItemById(this.pendingRawValue);
+        }
+
         this.items$ = new Observable((observer: Observer<string | undefined>) => {
           observer.next(this.searchControl.getRawValue());
         }).pipe(
@@ -284,6 +298,36 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           }
         }
       })
+    );
+  }
+
+  // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
+  private fetchItemById(id: any): void {
+    const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
+
+    this.subs.add(
+      this.http
+        .get<any>(`${url}/${id}`)
+        .subscribe({
+          next: (res) => {
+            // Handle wrapped response (e.g., { data: {...} })
+            let item = res?.data || res;
+            if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
+              item = ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
+            }
+            
+            if (item) {
+              this.items.set([item]);
+              this.setResolvedValue(id);
+              this.pendingRawValue = null;
+            }
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            // If fetch by id fails, let it stay pending for later resolution
+            this.cdr.markForCheck();
+          }
+        })
     );
   }
 
