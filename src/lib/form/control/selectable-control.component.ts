@@ -44,7 +44,7 @@ import {
   tap
 } from 'rxjs';
 import { AppConfig, ObjectUtils } from '@cartesianui/core';
-import { isUuid } from '../../helpers';
+import { isUuid, isValidInteger } from '../../helpers';;
 
 @Component({
   selector: 'selectable-control',
@@ -78,7 +78,7 @@ import { isUuid } from '../../helpers';
           type="text"
           class="flex-grow-1 border-0"
           [placeholder]="multi() && computedValues()?.length ? '' : placeholder()"
-          [typeahead]="this.url() ? items$ : items()"
+          [typeahead]="this.url() || this.optionsUrl() ? items$ : items()"
           [typeaheadOptionField]="optionField()"
           (typeaheadOnSelect)="onSelect($event.item)"
           [formControl]="searchControl"
@@ -229,7 +229,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         // this.lastUrlValue = urlValue;
 
         // If we have a pending value (initial value set), try to fetch it by id first
-        if (this.pendingRawValue != null && isUuid(this.pendingRawValue)) {
+        if (this.pendingRawValue != null && (isUuid(this.pendingRawValue) || isValidInteger(this.pendingRawValue))) {
           this.fetchItemById(this.pendingRawValue);
         }
 
