@@ -1,24 +1,51 @@
-<form class="form-group form-inline">
-  <ng-content></ng-content>
-  <div class="input-group mb-3">
-    <input
-      [(ngModel)]="value"
-      [typeahead]="options"
-      [typeaheadOptionField]="optionField"
-      [typeaheadMultipleSearch]="true"
-      [formControl]="formControl"
-      [ngClass]="formControl.valid ? 'is-valid' : formControl.touched && formControl.dirty && value ? 'is-invalid' : ''"
-      class="form-control"
-    />
-    <button class="input-group-text btn btn-success" (click)="onSelect()" [disabled]="formControl.invalid">
-      <i class="fa fa-plus"></i>
-    </button>
-  </div>
-  <div *ngIf="selected.length > 0">
-    <ul class="selected-list">
-      <li *ngFor="let item of selected; index as i; first as isFirst">
-        <span>{{item.name}}</span> <span (click)="onDelete(i)"><i class="fa fa-trash"></i></span>
-      </li>
-    </ul>
-  </div>
-</form>
+<ng-content></ng-content>
+
+<!-- MULTI MODE -->
+<div *ngIf="viewMode === 'multi'" class="input-group">
+  <input
+    [typeahead]="options"
+    [typeaheadOptionField]="optionField"
+    [typeaheadMultipleSearch]="true"
+    (typeaheadOnSelect)="onSelect($event)"
+    (input)="onType($event.target.value)"
+    [formControl]="formControl"
+    class="form-control"
+  />
+  <!-- [ngClass]="formControl.valid ? 'is-valid' : formControl.touched && formControl.dirty && value ? 'is-invalid' : ''" -->
+  <!-- <button class="input-group-text btn btn-success" (click)="onSelect()" [disabled]="formControl.invalid">
+    <i class="fa fa-plus"></i>
+  </button> -->
+</div>
+
+<!-- SINGLE DROPDOWN MODE -->
+<!-- <select *ngIf="viewMode === 'dropdown'" class="form-select" [formControl]="formControl" (ngModelChange)="onDropdownChange($event)">
+  <option [ngValue]="null">Select</option>
+  <option *ngFor="let opt of options" [ngValue]="opt">{{ opt[optionField] }}</option>
+</select> -->
+
+<input
+  *ngIf="viewMode === 'dropdown'"
+  type="text"
+  class="form-control"
+  [formControl]="formControl"
+  [typeahead]="options"
+  typeaheadOptionField="{{ optionField }}"
+  [typeaheadScrollable]="true"
+  [typeaheadMinLength]="0"
+  (typeaheadOnSelect)="onDropdownChange($event)"
+  placeholder="Select"
+/>
+<div *ngIf="formControl.invalid && formControl.touched" class="invalid-feedback">
+  Please select a valid option.
+</div>
+
+
+<!-- Selected list (only for multi mode) -->
+<div *ngIf="viewMode === 'multi' && selected.length > 0">
+  <ul class="selected-list">
+    <li *ngFor="let item of selected; index as i">
+      <span>{{ item.name }}</span>
+      <span (click)="onDelete(i)"><i class="fa fa-trash"></i></span>
+    </li>
+  </ul>
+</div>

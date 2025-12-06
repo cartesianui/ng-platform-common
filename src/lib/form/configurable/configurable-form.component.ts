@@ -3,8 +3,9 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { IFormField } from './models/form-field.model';
 
 @Component({
-  selector: 'configurable-form',
-  templateUrl: './configurable-form.component.html'
+    selector: 'configurable-form',
+    templateUrl: './configurable-form.component.html',
+    standalone: false
 })
 export class ConfigurableFormComponent implements OnInit {
   @Input() config: IFormField[] = [];

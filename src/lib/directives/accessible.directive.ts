@@ -2,7 +2,8 @@ import { Directive, Input, OnInit, ElementRef } from '@angular/core';
 import { PermissionCheckerService } from '@cartesianui/core';
 
 @Directive({
-  selector: '[accessible]'
+    selector: '[accessible]',
+    standalone: false
 })
 export class AccessibleDirective implements OnInit {
   @Input() permissions: string[];

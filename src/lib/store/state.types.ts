@@ -9,7 +9,18 @@ export type Pagination = {
   links: Object;
 };
 
-export type RequestState = { started: boolean; compeleted: boolean; failed: boolean };
+export type RequestTypes = 'get' | 'create' | 'update' | 'delete' | 'request' | 'all';
+
+export enum RequestType {
+  Get = 'get',
+  Create = 'create',
+  Update = 'update',
+  Delete = 'delete',
+  Request = 'request',
+  All = 'all'
+}
+
+export type RequestState = { started: boolean; completed: boolean; failed: boolean };
 
 export type ResponseMeta = { pagination: Pagination } & { [key: string]: any };
 
@@ -33,8 +44,10 @@ export type EntityListState<E> = BaseState<EntityList<E>>;
 export interface EntityStateExtended<T> extends NgRxEntityState<T> {
   meta: ResponseMeta | null;
   request: RequestState | undefined; // General Request
-  creation: RequestState | undefined; // Create Request
-  updation: RequestState | undefined; // Update Request
+  get: RequestState | undefined; // General Request
+  create: RequestState | undefined; // Create Request
+  update: RequestState | undefined; // Update Request
+  delete: RequestState | undefined; // General Request
 }
 
 /**
@@ -55,7 +68,7 @@ export const updateMetaState = (meta: ResponseMeta, action: string): ResponseMet
   }
 };
 
-export const requestDefault: RequestState = { started: false, compeleted: false, failed: false };
-export const requestStarted: RequestState = { started: true, compeleted: false, failed: false };
-export const requestCompleted: RequestState = { started: false, compeleted: true, failed: false };
-export const requestFailed: RequestState = { started: false, compeleted: false, failed: true };
+export const requestDefault: RequestState = { started: false, completed: false, failed: false };
+export const requestStarted: RequestState = { started: true, completed: false, failed: false };
+export const requestCompleted: RequestState = { started: false, completed: true, failed: false };
+export const requestFailed: RequestState = { started: false, completed: false, failed: true };

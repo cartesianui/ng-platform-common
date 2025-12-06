@@ -1,0 +1,22 @@
+.choosable-control {
+  width: 100%;
+}
+
+.form-control {
+  
+  background: var(--cui-white, #fff);
+  // Example hover
+  &:hover {
+    background: var(--cui-gray-100, #f7f7f7);
+  }
+}
+
+.checkbox-grid {
+  display: grid;
+  gap: 0.5rem 1rem;
+}
+
+label {
+  user-select: none;
+  cursor: pointer;
+}
