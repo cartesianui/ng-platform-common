@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 
+export type DisplayMode = 'icon' | 'text' | 'icon_text';
+
 @Component({
     selector: 'default-actions, page-actions',
     styleUrls: ['./default-actions.component.scss'],
@@ -20,6 +22,7 @@ export class DefaultActionsComponent {
     this._hide = hide;
   }
 
+  @Input() display: DisplayMode = 'icon_text';
   @Input() search: string = '';
   @Input() startDate: string = '';
   @Input() endDate: string = '';
@@ -144,6 +147,38 @@ export class DefaultActionsComponent {
       start: range[0] ?? null,
       end: range[1] ?? null
     });
+  }
+
+  /**
+   * Returns CSS classes based on display mode
+   * - 'icon': only show icon
+   * - 'text': only show text
+   * - 'icon_text': show icon and text
+   */
+  getDisplayClasses(): string {
+    switch (this.display) {
+      case 'icon':
+        return 'd-flex align-items-center';
+      case 'text':
+        return 'd-flex align-items-center';
+      case 'icon_text':
+      default:
+        return 'd-flex align-items-center gap-1';
+    }
+  }
+
+  /**
+   * Check if icon should be displayed
+   */
+  showIcon(): boolean {
+    return this.display === 'icon' || this.display === 'icon_text';
+  }
+
+  /**
+   * Check if text should be displayed
+   */
+  showText(): boolean {
+    return this.display === 'text' || this.display === 'icon_text';
   }
   
 }
