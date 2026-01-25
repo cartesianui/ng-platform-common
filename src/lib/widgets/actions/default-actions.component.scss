@@ -1,4 +1,40 @@
+// Actions bar modernization - Phase 1
+// Compact, dense toolbar styling
 .app-actions {
-  display: flex;
-  justify-content: flex-end;
+  // Reduced bottom margin (was mb-4 = 1.5rem in HTML)
+  // Override via utility class in HTML would be ideal, but we can enforce here
+  // margin-bottom: 1rem;
+
+  // Ensure consistent small input heights align with buttons
+  .form-control-sm,
+  .input-group-sm .form-control {
+    height: auto; // Let padding control height
+  }
+
+  // Icon spacing in buttons - tighter gap
+  .btn i {
+    margin-inline-end: 0.375rem;
+  }
+
+  .btn i:only-child {
+    margin-inline-end: 0;
+  }
+
+  // Input group styling - seamless borders
+  .input-group-text {
+    border-right: 0;
+    padding-inline-end: 0.5rem;
+  }
+
+  .input-group .form-control {
+    border-left: 0;
+    padding-inline-start: 0.5rem;
+  }
+
+  // Mobile: left-align everything
+  @media (max-width: 768px) {
+    .d-flex {
+      justify-content: flex-start;
+    }
+  }
 }
