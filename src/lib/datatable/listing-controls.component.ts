@@ -71,7 +71,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
     // });
 
     if (!this.entityConstructor) {
-      console.warn('⚠️ No entity constructor provided (creating new).');
+      // console.warn('⚠️ No entity constructor provided (creating new).');
       this.entityConstructor = this.getEntityConstructor();
     }
 
@@ -91,7 +91,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
 
     runInInjectionContext(this.injector, () => {
       effect(() => {
-        console.log('🔄 Criteria updated →', this.criteria?.queryString?.());
+        // console.log('🔄 Criteria updated →', this.criteria?.queryString?.());
         this.list();
         this.appendSearchCriteriaToUrl();
       });

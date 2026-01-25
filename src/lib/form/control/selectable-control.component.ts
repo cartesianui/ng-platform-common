@@ -60,11 +60,16 @@ import { isUuid, isValidInteger } from '../../helpers';;
   ],
   template: `
     <div class="selectable-control">
-      <div class="lookup-input-wrapper form-control d-flex flex-wrap align-items-center" (click)="focusInput()">
+      <div
+        class="lookup-input-wrapper form-control d-flex flex-wrap align-items-center"
+        [attr.readonly]="readonly() ? true : null"
+        (click)="!readonly() && focusInput()"
+      >
         <ng-container *ngIf="multi() && computedValues() && computedValues()?.length">
           <span *ngFor="let item of computedValues(); trackBy: trackByKey" class="badge bg-primary me-1 mb-1 d-flex align-items-center">
             {{ getOptionLabel(item) }}
             <button
+              *ngIf="!readonly()"
               type="button"
               class="btn-close btn-close-white btn-sm ms-1"
               aria-label="Remove"
@@ -74,6 +79,7 @@ import { isUuid, isValidInteger } from '../../helpers';;
         </ng-container>
 
         <input
+          *ngIf="!readonly()"
           #inputRef
           type="text"
           class="flex-grow-1 border-0"
@@ -85,6 +91,9 @@ import { isUuid, isValidInteger } from '../../helpers';;
           (blur)="handleBlur()"
           autocomplete="off"
         />
+        <span *ngIf="readonly() && !multi() && computedValues()?.length" class="readonly-text">
+          {{ getOptionLabel(computedValues()[0]) }}
+        </span>
       </div>
     </div>
   `,
@@ -96,6 +105,9 @@ import { isUuid, isValidInteger } from '../../helpers';;
 
       .lookup-input-wrapper {
         min-height: 38px;
+      }
+
+      .lookup-input-wrapper:not([readonly]) {
         cursor: text;
       }
 
@@ -105,9 +117,18 @@ import { isUuid, isValidInteger } from '../../helpers';;
         background-color: inherit;
       }
 
-      .lookup-input-wrapper:focus-within {
+      .lookup-input-wrapper:focus-within:not([readonly]) {
         border-color: #86b7fe;
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
+
+      .lookup-input-wrapper[readonly] {
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      .readonly-text {
+        color: #495057;
       }
 
       .badge {
@@ -142,6 +163,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   optionKey = input<string>('id');
   optionField = input('name');
   placeholder = input('Search...');
+  readonly = input(false);
 
   // --- Two-way bound model (keys) ---
   value = model<T[keyof T][] | T[keyof T] | null>(null);
@@ -162,8 +184,8 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // store a pending value when options are not yet available (same as before)
   private pendingRawValue: any = null;
 
-  // Track last URL to know if we need to fetch by id
-  // private lastUrlValue: string | null = null;
+  // Track last fetched ID to prevent duplicate API calls
+  private lastFetchedId: any = null;
 
   // --- Computed state: computedValues used by template for rendering badges etc.
   // Priority: use `entity()` if available, otherwise resolve from `value()`.
@@ -303,7 +325,13 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
   private fetchItemById(id: any): void {
+    // Prevent duplicate fetches for the same ID
+    if (this.lastFetchedId === id) {
+      return;
+    }
+
     const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
+    this.lastFetchedId = id;
 
     this.subs.add(
       this.http
@@ -315,7 +343,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
               item = ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
             }
-            
+
             if (item) {
               this.items.set([item]);
               this.setResolvedValue(id);
@@ -324,7 +352,8 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             this.cdr.markForCheck();
           },
           error: () => {
-            // If fetch by id fails, let it stay pending for later resolution
+            // If fetch by id fails, reset lastFetchedId to allow retry
+            this.lastFetchedId = null;
             this.cdr.markForCheck();
           }
         })
@@ -565,6 +594,12 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     // If options are not yet available, store pending and resolve later
     if (!this.options()?.length && !(this.items() && this.items().length)) {
       this.pendingRawValue = value;
+
+      // If we have a URL configured and the value is a valid ID, fetch it immediately
+      const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
+      if (url && value != null && (isUuid(value) || isValidInteger(value))) {
+        this.fetchItemById(value);
+      }
     } else {
       this.setResolvedValue(value);
       this.pendingRawValue = null;
@@ -578,6 +613,8 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // Emit clears to keep parent in sync (safe to emit here)
       this.valueChange.emit(null);
       this.entityChange.emit(null);
+      // Reset fetch cache when value is cleared
+      this.lastFetchedId = null;
     }
 
     this.cdr.markForCheck();
@@ -652,7 +689,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const ctrl = this.ngControl!.control!;
       // console.log('DIAG: control.value =>', ctrl.value);
       // console.log('DIAG: control.validator(ctrl) =>', ctrl.validator ? ctrl.validator(ctrl) : null);
-      this.validators.forEach((v, i) => console.log(`DIAG: validator[${i}] ->`, v.constructor.name, '->', v.validate(ctrl)));
+      // this.validators.forEach((v, i) => console.log(`DIAG: validator[${i}] ->`, v.constructor.name, '->', v.validate(ctrl)));
     }
 
     // Ensure selected is in sync with value if options already exist
@@ -663,5 +700,6 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+    this.lastFetchedId = null;
   }
 }

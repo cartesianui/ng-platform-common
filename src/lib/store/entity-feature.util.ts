@@ -3,9 +3,10 @@ import { createFeature, createReducer, on, createSelector } from '@ngrx/store';
 import { EntityAdapter, createEntityAdapter, Update } from '@ngrx/entity';
 import { EntityStateExtended, requestCompleted, requestDefault, requestFailed, requestStarted, updateMetaState } from '@cartesianui/common';
 
-export function entityFeature<T>(
+export function entityFeature<T, TStateExtension extends Record<string, any> = {}>(
   featureKey: string,
-  actions: any // action group for the entity (typed loosely here)
+  actions: any, // action group for the entity (typed loosely here)
+  stateExtension?: TStateExtension // optional additional state properties
 ) {
   const adapter: EntityAdapter<T> = createEntityAdapter<T>();
 
@@ -13,7 +14,9 @@ export function entityFeature<T>(
     selected: T | null;
   }
 
-  const initialState: IFeatureState = adapter.getInitialState({
+  type ExtendedFeatureState = IFeatureState & TStateExtension;
+
+  const baseInitialState = {
     selected: null,
     meta: null,
     request: requestDefault,
@@ -21,6 +24,11 @@ export function entityFeature<T>(
     create: requestDefault,
     update: requestDefault,
     delete: requestDefault
+  };
+
+  const initialState: any = adapter.getInitialState({
+    ...baseInitialState,
+    ...(stateExtension || {})
   });
 
   const reducer = createReducer(
