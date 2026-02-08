@@ -1,0 +1,104 @@
+<ngx-datatable
+  #dtTable
+  [class]="tableClass"
+  [rows]="rows"
+  [columns]="headers"
+  [columnMode]="columnMode"
+  [headerHeight]="headerHeight"
+  [footerHeight]="footerHeight"
+  [rowHeight]="rowHeight"
+  [externalPaging]="externalPaging"
+  [count]="count"
+  [offset]="offset"
+  [limit]="limit"
+  [selected]="selected"
+  [selectionType]="selectionType"
+  (select)="onSelectInternal($event)"
+  (page)="onPageInternal($event)"
+  (sort)="onSortInternal($event)"
+  [sortType]="sortType"
+>
+  <!-- Row Detail (only when dtDetail is projected) -->
+  <ngx-datatable-row-detail *ngIf="detailTemplate" [rowHeight]="detailRowHeight" (toggle)="onDetailToggleInternal($event)">
+    <ng-template let-row="row" let-expanded="expanded" ngx-datatable-row-detail-template>
+      <ng-container *ngTemplateOutlet="detailTemplate; context: { $implicit: row, row: row, expanded: expanded }"></ng-container>
+    </ng-template>
+  </ngx-datatable-row-detail>
+
+  <!-- Checkbox Column -->
+  <ngx-datatable-column
+    *ngIf="showCheckboxColumn"
+    [width]="30"
+    [sortable]="false"
+    [canAutoResize]="false"
+    [draggable]="false"
+    [resizeable]="false"
+    [headerCheckboxable]="true"
+    [checkboxable]="true"
+  ></ngx-datatable-column>
+
+  <!-- Dynamic Data Columns -->
+  <ngx-datatable-column
+    *ngFor="let col of columns"
+    [name]="col.label"
+    [prop]="col.key"
+    [width]="col?.opt?.width || undefined"
+    [flexGrow]="col?.opt?.width ? 0 : 1"
+    [minWidth]="col?.opt?.minWidth ?? '150'"
+    [sortable]="true"
+  >
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <!-- Custom Template Override -->
+      <ng-container *ngIf="getCustomTemplate(col.key) as customTpl; else defaultCell">
+        <ng-container *ngTemplateOutlet="customTpl; context: { $implicit: row, row: row, col: col }"></ng-container>
+      </ng-container>
+
+      <!-- Default Cell Rendering -->
+      <ng-template #defaultCell>
+        <!-- Link Cell -->
+        <ng-container *ngIf="col?.opt?.link === true; else normalCell">
+          <a href="javascript:;" (click)="onEditInternal(row)" [innerHTML]="row.dtFormatted(col)"></a>
+        </ng-container>
+
+        <!-- Normal Cell -->
+        <ng-template #normalCell>
+          <ng-container *ngIf="col?.opt?.formatter?.displayAs || col?.opt?.formatter?.type === 'multiline'; else plainCell">
+            <span [innerHTML]="row.dtFormatted(col)"></span>
+          </ng-container>
+          <ng-template #plainCell>{{ row.dtFormatted(col) }}</ng-template>
+        </ng-template>
+      </ng-template>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Extra Columns (__prefixed dtColumn directives) -->
+  <ngx-datatable-column
+    *ngFor="let extra of extraColumns"
+    [name]="extra.columnName"
+    [width]="extra.columnWidth || undefined"
+    [sortable]="false"
+    [canAutoResize]="!extra.columnWidth"
+    [draggable]="false"
+    [resizeable]="false"
+  >
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <ng-container *ngTemplateOutlet="extra.templateRef; context: { $implicit: row, row: row }"></ng-container>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Expand/Collapse Column (auto-added when dtDetail is projected) -->
+  <ngx-datatable-column
+    *ngIf="detailTemplate"
+    [width]="50"
+    [sortable]="false"
+    [canAutoResize]="false"
+    [draggable]="false"
+    [resizeable]="false"
+  >
+    <ng-template let-row="row" let-expanded="expanded" ngx-datatable-cell-template>
+      <button class="btn btn-sm btn-link p-0" (click)="toggleExpandRow(row)">
+        <i class="fa" [ngClass]="{ 'fa-chevron-right': !expanded, 'fa-chevron-down': expanded }"></i>
+      </button>
+    </ng-template>
+  </ngx-datatable-column>
+</ngx-datatable>
