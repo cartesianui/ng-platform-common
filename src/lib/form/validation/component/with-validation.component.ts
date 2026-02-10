@@ -81,7 +81,10 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
   }
 
   private humanReadable(name: string): string {
-    return name
+    // Remove 'Id' suffix (e.g., 'vendorId' -> 'vendor')
+    const cleanName = name.replace(/Id$/, '');
+
+    return cleanName
       .replace(/(?<=[a-zA-Z])(?=[A-Z])/g, ' ')
       .split(' ')
       .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))

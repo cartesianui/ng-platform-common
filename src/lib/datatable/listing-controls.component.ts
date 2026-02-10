@@ -1,4 +1,4 @@
-import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect } from '@angular/core';
+import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect, ChangeDetectorRef, untracked } from '@angular/core';
 import { ElementRef, ViewChild, runInInjectionContext, DestroyRef } from '@angular/core';
 import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
 import { BaseComponent } from '../base.component';
@@ -15,6 +15,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   @ViewChild('dtContainer', { static: false }) dtContainer: ElementRef;
 
   protected criteriaFactory = inject(RequestCriteriaFactory);
+  protected cdr = inject(ChangeDetectorRef);
 
   // use if data is passed from parent
   @Input()
@@ -92,9 +93,13 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
     runInInjectionContext(this.injector, () => {
       effect(() => {
         // console.log('🔄 Criteria updated →', this.criteria?.queryString?.());
-        this.list();
-        this.appendSearchCriteriaToUrl();
-      });
+        // Defer list() to avoid ExpressionChangedAfterItHasBeenCheckedError
+        // Delay execution to ensure navigation CD cycles are complete
+        setTimeout(() => {
+          this.list();
+          this.appendSearchCriteriaToUrl();
+        }, 100); // 100ms delay ensures all navigation state updates are complete
+      }, { allowSignalWrites: true });
     });
 
     return this.criteria;

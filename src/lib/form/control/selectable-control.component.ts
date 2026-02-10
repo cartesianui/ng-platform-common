@@ -124,7 +124,7 @@ import { isUuid, isValidInteger } from '../../helpers';;
 
       .lookup-input-wrapper[readonly] {
         cursor: not-allowed;
-        pointer-events: none;
+        background-color: #e9ecef;
       }
 
       .readonly-text {
@@ -261,9 +261,13 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           switchMap((query: string) => {
             if (!query) return of([]);
             // TODO: For Edit get/search and set using pendingValue
+            // Convert field name from app format to API format if needed
+            const field = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
+              ? ObjectUtils.convertKey(this.optionField(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
+              : this.optionField();
             return this.http
               .get<any>(urlValue, {
-                params: { search: `name:${query}`, searchFields: `name:like` }
+                params: { search: `${field}:${query}`, searchFields: `${field}:like` }
               })
               .pipe(
                 map((res) => {
@@ -275,23 +279,29 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                 }),
                 tap({
                   next: (items) => {
-                    this.items.set(items ?? []);
-                    if (this.pendingRawValue != null) {
-                      // Resolve pending once we have items/options
-                      this.setResolvedValue(this.pendingRawValue);
-                      this.pendingRawValue = null;
-                    } else {
-                      // Ensure selected is in sync with value (if value present)
-                      if (this.value() != null) {
-                        // attempt to refresh selected from available items/options
-                        // setResolvedValue will derive selected from value
-                        this.setResolvedValue(this.value());
+                    // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
+                    // This prevents typeahead component from detecting changes during same CD cycle
+                    setTimeout(() => {
+                      this.items.set(items ?? []);
+                      if (this.pendingRawValue != null) {
+                        // Resolve pending once we have items/options
+                        this.setResolvedValue(this.pendingRawValue);
+                        this.pendingRawValue = null;
+                      } else {
+                        // Ensure selected is in sync with value (if value present)
+                        if (this.value() != null) {
+                          // attempt to refresh selected from available items/options
+                          // setResolvedValue will derive selected from value
+                          this.setResolvedValue(this.value());
+                        }
+                        this.cdr.markForCheck();
                       }
-                      this.cdr.markForCheck();
-                    }
+                    }, 0);
                   },
                   error: () => {
-                    this.items.set([]);
+                    setTimeout(() => {
+                      this.items.set([]);
+                    }, 0);
                     this.cdr.markForCheck();
                   }
                 })
@@ -299,14 +309,19 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           })
         );
       } else if (dataValue) {
-        this.items.set(dataValue ?? []);
-        // If we already have value stored, ensure `selected` is resolved from those options
-        if (this.value() != null) {
-          this.setResolvedValue(this.value());
-        }
-        this.cdr.markForCheck();
+        // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => {
+          this.items.set(dataValue ?? []);
+          // If we already have value stored, ensure `selected` is resolved from those options
+          if (this.value() != null) {
+            this.setResolvedValue(this.value());
+          }
+          this.cdr.markForCheck();
+        }, 0);
       } else {
-        this.items.set([]);
+        setTimeout(() => {
+          this.items.set([]);
+        }, 0);
       }
     });
 
@@ -345,11 +360,14 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             }
 
             if (item) {
-              this.items.set([item]);
-              this.setResolvedValue(id);
-              this.pendingRawValue = null;
+              // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
+              setTimeout(() => {
+                this.items.set([item]);
+                this.setResolvedValue(id);
+                this.pendingRawValue = null;
+                this.cdr.markForCheck();
+              }, 0);
             }
-            this.cdr.markForCheck();
           },
           error: () => {
             // If fetch by id fails, reset lastFetchedId to allow retry
@@ -400,8 +418,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           const prevSelection = this.entity();
           const newSelection = this.multi() ? resolved : resolved[0] ?? null;
           if (JSON.stringify(prevSelection) !== JSON.stringify(newSelection)) {
-            this.entity.set(newSelection);
-            this.entityChange.emit(newSelection);
+            // Defer to next CD cycle to avoid ExpressionChangedAfterItHasBeenCheckedError
+            setTimeout(() => {
+              this.entity.set(newSelection);
+              this.entityChange.emit(newSelection);
+            }, 0);
           }
         } catch {
           // ignore
@@ -412,122 +433,132 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // fallthrough
     }
 
-    // Normalize & store the key(s) in `value`
-    this.value.set(value);
-    this.valueChange.emit(value);
+    // Defer signal updates and emissions to next change detection cycle
+    // This prevents ExpressionChangedAfterItHasBeenCheckedError when used in forms with effects
+    setTimeout(() => {
+      // Normalize & store the key(s) in `value`
+      this.value.set(value);
+      this.valueChange.emit(value);
 
-    // Resolve and store selected object(s) from available options/items where possible.
-    const resolvedItems = this.resolveItemsFromValue(value);
-    const selectedToSet = this.multi() ? resolvedItems : resolvedItems.length ? resolvedItems[0] : null;
-    this.entity.set(selectedToSet);
-    this.entityChange.emit(selectedToSet);
+      // Resolve and store selected object(s) from available options/items where possible.
+      const resolvedItems = this.resolveItemsFromValue(value);
+      const selectedToSet = this.multi() ? resolvedItems : resolvedItems.length ? resolvedItems[0] : null;
+      this.entity.set(selectedToSet);
+      this.entityChange.emit(selectedToSet);
 
-    // notify Angular forms via CVA callback ONLY if value actually changed
-    if (isValueChanged) {
-      this.onChange(value);
-    }
-
-    // mark touched (we consider a change to be an interaction)
-    this.onTouched();
-
-    // Update parent control validity/status without setting parent value
-    try {
-      const ctrl = this.ngControl?.control;
-      if (ctrl) {
-        ctrl.markAsDirty();
-        ctrl.updateValueAndValidity({ emitEvent: false });
+      // notify Angular forms via CVA callback ONLY if value actually changed
+      if (isValueChanged) {
+        this.onChange(value);
       }
-    } catch {
-      // swallow
-    }
 
-    // ensure UI updates under OnPush
-    this.cdr.markForCheck();
+      // mark touched (we consider a change to be an interaction)
+      this.onTouched();
+
+      // Update parent control validity/status without setting parent value
+      try {
+        const ctrl = this.ngControl?.control;
+        if (ctrl) {
+          ctrl.markAsDirty();
+          ctrl.updateValueAndValidity({ emitEvent: false });
+        }
+      } catch {
+        // swallow
+      }
+
+      // ensure UI updates under OnPush
+      this.cdr.markForCheck();
+    }, 0);
   }
 
   private setResolvedValue(value: any): void {
     // This function expects `value` to be either keys or full item objects.
     // It will set both `value` (keys) and `selected` (object(s)), and update the searchControl UI.
+    // Defer to next CD cycle when called from effects to avoid ExpressionChangedAfterItHasBeenCheckedError
 
     if (value == null || (Array.isArray(value) && value.length === 0)) {
-      // Clear both
-      this.value.set(null);
-      this.entity.set(null);
-      this.valueChange.emit(null);
-      this.entityChange.emit(null);
-      this.searchControl.setValue('', { emitEvent: false });
-      this.cdr.markForCheck();
+      // Clear both - defer to avoid CD errors
+      setTimeout(() => {
+        this.value.set(null);
+        this.entity.set(null);
+        this.valueChange.emit(null);
+        this.entityChange.emit(null);
+        this.searchControl.setValue('', { emitEvent: false });
+        this.cdr.markForCheck();
+      }, 0);
       return;
     }
 
-    if (this.multi()) {
-      // Expecting array or single -> treat as array of keys or objects
-      const resolvedItems = this.resolveItemsFromValue(value);
-      const keys = resolvedItems.map((i) => this.getOptionKey(i)).filter((k) => k != null);
+    // Defer all signal updates and emissions to avoid ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      if (this.multi()) {
+        // Expecting array or single -> treat as array of keys or objects
+        const resolvedItems = this.resolveItemsFromValue(value);
+        const keys = resolvedItems.map((i) => this.getOptionKey(i)).filter((k) => k != null);
 
-      // Avoid emitting if keys are identical to current value
-      try {
-        const curr = this.value();
-        if (JSON.stringify(curr) !== JSON.stringify(keys)) {
+        // Avoid emitting if keys are identical to current value
+        try {
+          const curr = this.value();
+          if (JSON.stringify(curr) !== JSON.stringify(keys)) {
+            this.value.set(keys);
+            this.valueChange.emit(keys);
+          }
+        } catch {
           this.value.set(keys);
           this.valueChange.emit(keys);
         }
-      } catch {
-        this.value.set(keys);
-        this.valueChange.emit(keys);
-      }
 
-      // Update entity only when changed
-      try {
-        const currEntity = this.entity();
-        if (JSON.stringify(currEntity) !== JSON.stringify(resolvedItems)) {
+        // Update entity only when changed
+        try {
+          const currEntity = this.entity();
+          if (JSON.stringify(currEntity) !== JSON.stringify(resolvedItems)) {
+            this.entity.set(resolvedItems);
+            this.entityChange.emit(resolvedItems);
+          }
+        } catch {
           this.entity.set(resolvedItems);
           this.entityChange.emit(resolvedItems);
         }
-      } catch {
-        this.entity.set(resolvedItems);
-        this.entityChange.emit(resolvedItems);
-      }
 
-      // show no text for multi (tags are displayed)
-      this.searchControl.patchValue('', { emitEvent: false });
-    } else {
-      // single select: want single key stored, and label shown in searchControl
-      const resolvedItems = this.resolveItemsFromValue(value);
-      const first = resolvedItems.length ? resolvedItems[0] : null;
-      const keyToStore = first ? this.getOptionKey(first) : Array.isArray(value) ? (value[0] ?? null) : value;
+        // show no text for multi (tags are displayed)
+        this.searchControl.patchValue('', { emitEvent: false });
+      } else {
+        // single select: want single key stored, and label shown in searchControl
+        const resolvedItems = this.resolveItemsFromValue(value);
+        const first = resolvedItems.length ? resolvedItems[0] : null;
+        const keyToStore = first ? this.getOptionKey(first) : Array.isArray(value) ? (value[0] ?? null) : value;
 
-      try {
-        const curr = this.value();
-        if (JSON.stringify(curr) !== JSON.stringify(keyToStore)) {
+        try {
+          const curr = this.value();
+          if (JSON.stringify(curr) !== JSON.stringify(keyToStore)) {
+            this.value.set(keyToStore);
+            this.valueChange.emit(keyToStore);
+          }
+        } catch {
           this.value.set(keyToStore);
           this.valueChange.emit(keyToStore);
         }
-      } catch {
-        this.value.set(keyToStore);
-        this.valueChange.emit(keyToStore);
-      }
 
-      try {
-        const currEntity = this.entity();
-        if (JSON.stringify(currEntity) !== JSON.stringify(first)) {
+        try {
+          const currEntity = this.entity();
+          if (JSON.stringify(currEntity) !== JSON.stringify(first)) {
+            this.entity.set(first);
+            this.entityChange.emit(first);
+          }
+        } catch {
           this.entity.set(first);
           this.entityChange.emit(first);
         }
-      } catch {
-        this.entity.set(first);
-        this.entityChange.emit(first);
+
+        if (first) {
+          this.searchControl.setValue(this.getOptionLabel(first), { emitEvent: false });
+        } else {
+          // If we couldn't resolve the object (no matching option), show empty string
+          this.searchControl.setValue('', { emitEvent: false });
+        }
       }
 
-      if (first) {
-        this.searchControl.setValue(this.getOptionLabel(first), { emitEvent: false });
-      } else {
-        // If we couldn't resolve the object (no matching option), show empty string
-        this.searchControl.setValue('', { emitEvent: false });
-      }
-    }
-
-    this.cdr.markForCheck();
+      this.cdr.markForCheck();
+    }, 0);
   }
 
   // Resolve item objects from a provided value (value can be keys or full item objects)
