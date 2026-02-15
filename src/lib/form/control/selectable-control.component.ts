@@ -164,6 +164,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   optionField = input('name');
   placeholder = input('Search...');
   readonly = input(false);
+  allowFreeText = input(false);
 
   // --- Two-way bound model (keys) ---
   value = model<T[keyof T][] | T[keyof T] | null>(null);
@@ -172,6 +173,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // --- Two-way bound model (full object(s)) ---
   entity = model<T[] | T | null>(null);
   entityChange = output<T[] | T | null>();
+  freeTextChange = output<string>();
 
   // --- Internal state ---
   items = signal<T[]>([]); // Available option (don't show selected one)
@@ -266,7 +268,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
               ? ObjectUtils.convertKey(this.optionField(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
               : this.optionField();
             return this.http
-              .get<any>(urlValue, {
+              .get<any>(`${AppConfig.remoteServiceBaseUrl}${urlValue}`, {
                 params: { search: `${field}:${query}`, searchFields: `${field}:like` }
               })
               .pipe(
@@ -333,6 +335,11 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           if (this.value() != null || this.entity() != null) {
             this.setValue(null);
           }
+          if (this.allowFreeText()) {
+            this.freeTextChange.emit('');
+          }
+        } else if (this.allowFreeText() && typeof val === 'string') {
+          this.freeTextChange.emit(val);
         }
       })
     );
@@ -350,7 +357,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
     this.subs.add(
       this.http
-        .get<any>(`${url}/${id}`)
+        .get<any>(`${AppConfig.remoteServiceBaseUrl}${url}/${id}`)
         .subscribe({
           next: (res) => {
             // Handle wrapped response (e.g., { data: {...} })
@@ -608,6 +615,16 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   handleBlur() {
     this.onTouched();
+
+    // When allowFreeText is enabled and user typed text without selecting from dropdown,
+    // preserve the typed text and emit it via freeTextChange
+    if (this.allowFreeText()) {
+      const typed = this.searchControl.getRawValue()?.trim() ?? '';
+      if (typed && this.entity() == null) {
+        this.freeTextChange.emit(typed);
+      }
+    }
+
     try {
       const ctrl = this.ngControl?.control;
       if (ctrl) {
