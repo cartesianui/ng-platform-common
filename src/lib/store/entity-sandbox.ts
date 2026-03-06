@@ -102,17 +102,17 @@ export class EntitySandbox<T> extends Sandbox {
     this.pagination = computed(() => this.meta()?.pagination ?? null);
   }
 
-  fetchAll(criteria: RequestCriteriaOuput = null, useExisting: boolean = false): void {
+  getAll(criteria: RequestCriteriaOuput = null, useExisting: boolean = false): void {
     // Skip if entities already loaded and user wants to use existing
     if (useExisting && this.entities()?.length > 0) {
       return;
     }
 
-    this.store.dispatch(this.config.actions.fetchAll({ criteria }));
+    this.store.dispatch(this.config.actions.getAll({ criteria }));
   }
 
-  fetchById(id: string): void {
-    this.store.dispatch(this.config.actions.fetchById({ id }));
+  getById(id: string): void {
+    this.store.dispatch(this.config.actions.getById({ id }));
   }
 
   select(entity: T): void {

@@ -26,8 +26,8 @@ Component
               └── EntityEffect handles side effects (HTTP)
 
 Data Flow:
-  Component → EntitySandbox.fetchAll() → dispatches fetchAll action
-    → EntityEffect.fetchAll$ → HttpService.getAll()
+  Component → EntitySandbox.getAll() → dispatches getAll action
+    → EntityEffect.getAll$ → HttpService.getAll()
     → success: dispatches load({ entities, meta })
     → Reducer updates state
     → Selectors provide data to Signals
@@ -51,7 +51,7 @@ const actions = entityActions<Product, 'Product'>('Product');
 export const ProductActions = { ...actions };
 ```
 
-This generates a full action group with source `[Product/API]` containing: `fetchAll`, `fetchById`, `load`, `create`, `createSuccess`, `createFailure`, `update`, `updateSuccess`, `updateFailure`, `delete`, `select`, `clear`, and all state-clearing actions.
+This generates a full action group with source `[Product/API]` containing: `getAll`, `getById`, `load`, `create`, `createSuccess`, `createFailure`, `update`, `updateSuccess`, `updateFailure`, `delete`, `select`, `clear`, and all state-clearing actions.
 
 ### 2. Reducer (Feature)
 
@@ -87,7 +87,7 @@ export class ProductEffects extends EntityEffect<Product> {
 }
 ```
 
-The base class provides effects for: `fetchAll$`, `fetchById$`, `create$`, `update$`, `delete$`. Override individual effects for custom behavior.
+The base class provides effects for: `getAll$`, `getById$`, `create$`, `update$`, `delete$`. Override individual effects for custom behavior.
 
 ### 4. Wire Up in Providers
 
@@ -139,8 +139,8 @@ export class CatalogSandbox extends Sandbox {
 
 | Method | Description |
 |--------|-------------|
-| `fetchAll(criteria?, useExisting?)` | Fetch all entities. Skips if `useExisting=true` and data exists |
-| `fetchById(id)` | Fetch single entity by ID, sets as selected |
+| `getAll(criteria?, useExisting?)` | Fetch all entities. Skips if `useExisting=true` and data exists |
+| `getById(id)` | Fetch single entity by ID, sets as selected |
 | `select(entity)` | Set entity as selected |
 | `create(entity)` | Dispatch create action |
 | `update(id, entity)` | Dispatch update action (wraps in `{ id, changes }`) |
@@ -200,7 +200,7 @@ export class ProductListingComponent extends ListingControlsComponent<IProduct> 
   }
 
   protected list(): void {
-    this.sb.product.fetchAll(this.criteria.httpParams());
+    this.sb.product.getAll(this.criteria.httpParams());
   }
 }
 ```
@@ -321,8 +321,8 @@ interface EntityStateExtended<T> extends NgRxEntityState<T> {
 
 | Action | Payload | Triggered By |
 |--------|---------|-------------|
-| `fetchAll` | `{ criteria }` | `EntitySandbox.fetchAll()` |
-| `fetchById` | `{ id }` | `EntitySandbox.fetchById()` |
+| `getAll` | `{ criteria }` | `EntitySandbox.getAll()` |
+| `getById` | `{ id }` | `EntitySandbox.getById()` |
 | `load` | `{ entities, meta }` | Effect on fetch success |
 | `select` | `{ entity }` | `EntitySandbox.select()` or effect |
 | `create` | `{ entity }` | `EntitySandbox.create()` |
@@ -348,8 +348,8 @@ Abstract class providing standard NgRx effects for CRUD operations. All effects 
 
 | Effect | Listens To | Calls | Dispatches On Success | Dispatches On Failure |
 |--------|-----------|-------|-----------------------|----------------------|
-| `fetchAll$` | `fetchAll` | `httpService.getAll()` | `load({ entities, meta })` | `fetchFailure()` |
-| `fetchById$` | `fetchById` | `httpService.getById()` | `select({ entity })` | `fetchFailure()` |
+| `getAll$` | `getAll` | `httpService.getAll()` | `load({ entities, meta })` | `getFailure()` |
+| `getById$` | `getById` | `httpService.getById()` | `select({ entity })` | `getFailure()` |
 | `create$` | `create` | `httpService.create()` | `createSuccess({ entity })` | `createFailure()` |
 | `update$` | `update` | `httpService.update()` | `updateSuccess({ entity })` | `updateFailure()` |
 | `delete$` | `delete` | `httpService.delete()` | — | — |
@@ -574,7 +574,7 @@ export class ShiftEffects extends EntityEffect<Shift, IShiftHttpServiceExtension
 - `EntityEffect<Shift, IShiftHttpServiceExtension>` — second generic enables `this.httpService.getActiveShifts()` etc.
 - Without extension: `EntityEffect<Product>` (single type param)
 - Custom effects follow the same `ofType → switchMap → httpService → map/catchError` structure as base effects
-- Override base effects by declaring a property with the same name (e.g. `fetchAll$`)
+- Override base effects by declaring a property with the same name (e.g. `getAll$`)
 
 ---
 
@@ -612,7 +612,7 @@ export class ShiftSandbox extends Sandbox {
 ```
 
 **Convention:**
-- Standard CRUD: `sb.shift.fetchAll()`, `sb.shift.create(entity)`, `sb.shift.selected()`
+- Standard CRUD: `sb.shift.getAll()`, `sb.shift.create(entity)`, `sb.shift.selected()`
 - Custom ops: `sb.getActiveShifts(id)`, `sb.endShift(id)`
 
 ---
@@ -644,8 +644,8 @@ interface EntityStateExtended<T> extends NgRxEntityState<T> {
   // NgRxEntityState provides: ids[], entities{}
   meta: ResponseMeta | null;       // Pagination info from API
   selected: T | null;              // Currently selected entity
-  request: RequestState | undefined;  // fetchAll state (started/completed/failed)
-  get: RequestState | undefined;      // fetchById state
+  request: RequestState | undefined;  // getAll state (started/completed/failed)
+  get: RequestState | undefined;      // getById state
   create: RequestState | undefined;   // create state
   update: RequestState | undefined;   // update state
   delete: RequestState | undefined;   // delete state

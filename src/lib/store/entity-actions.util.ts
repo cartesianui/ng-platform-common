@@ -9,8 +9,8 @@ export function entityActions<TModel, TName extends string>(entityName: TName) {
     source: `${entityName}/API` as any,
     events: {
       'Load': props<{ entities: TModel[]; meta: ResponseMeta }>(),
-      'Fetch All': props<{ criteria: RequestCriteriaOuput }>(),
-      'Fetch By Id': props<{ id: string }>(),
+      'Get All': props<{ criteria: RequestCriteriaOuput }>(),
+      'Get By Id': props<{ id: string }>(),
 
       //quick CRUD actions
       'Add': props<{ entity: TModel }>(),
@@ -31,7 +31,7 @@ export function entityActions<TModel, TName extends string>(entityName: TName) {
       'Create Failure': props<{ errors: IError; message: string }>(),
       'Update Success': props<{ entity: TModel }>(),
       'Update Failure': props<{ errors: IError; message: string }>(),
-      'Fetch Failure': props<{ errors: IError; message: string }>(),
+      'Get Failure': props<{ errors: IError; message: string }>(),
 
       // Clear specific request states
       'Clear Request': emptyProps(),

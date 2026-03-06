@@ -93,11 +93,11 @@ export function entityFeature<T, TStateExtension extends Record<string, any> = {
     ),
     on(actions.deleteMany, (state, { ids }) => adapter.removeMany(ids, state)),
 
-    on(actions.fetchAll, (state) => ({
+    on(actions.getAll, (state) => ({
       ...state,
       get: { ...requestStarted }
     })),
-    on(actions.fetchById, (state) => ({
+    on(actions.getById, (state) => ({
       ...state,
       get: { ...requestStarted }
     })),
@@ -109,7 +109,7 @@ export function entityFeature<T, TStateExtension extends Record<string, any> = {
       })
     ),
     on(actions.clear, (state) => adapter.removeAll(state)),
-    on(actions.fetchFailure, (state) => ({
+    on(actions.getFailure, (state) => ({
       ...state,
       get: { ...requestFailed }
     })),

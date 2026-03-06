@@ -55,7 +55,7 @@ export class ProductListingComponent
   }
 
   protected list(): void {
-    this.sb.product.fetchAll(this.criteria.httpParams());
+    this.sb.product.getAll(this.criteria.httpParams());
   }
 }
 ```

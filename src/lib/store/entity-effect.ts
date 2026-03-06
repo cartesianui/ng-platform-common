@@ -54,7 +54,7 @@ export abstract class EntityEffect<TModel, THttpServiceExtension extends IHttpSe
    * By default, it extracts from the action type
    */
   protected get entityName(): string {
-    const actionType = this.actions?.fetchAll?.type || '';
+    const actionType = this.actions?.getAll?.type || '';
     const match = actionType.match(/\[(.*?)\]/);
     return match ? match[1] : 'Entity';
   }
@@ -81,22 +81,22 @@ export abstract class EntityEffect<TModel, THttpServiceExtension extends IHttpSe
     });
   }
 
-  fetchAll$ = createEffect(() => {
+  getAll$ = createEffect(() => {
     return this.actions$.pipe(
-      ofType(this.actions.fetchAll),
+      ofType(this.actions.getAll),
       map((action: any) => action.criteria),
       switchMap((criteria: RequestCriteriaOuput) =>
         this.httpService.getAll(criteria).pipe(
           map(({ data, meta }: ICartesianResponse) => {
             if (!data) {
-              console.warn(`[${this.entityName}] fetchAll returned no data`);
+              console.warn(`[${this.entityName}] getAll returned no data`);
             }
             return this.actions.load({ entities: data || [], meta });
           }),
           catchError((error) => {
             const { message, errors } = extractErrorInfo(error);
-            this.logError('fetchAll', { criteria }, error);
-            return of(this.actions.fetchFailure({ errors, message }));
+            this.logError('getAll', { criteria }, error);
+            return of(this.actions.getFailure({ errors, message }));
           })
         )
       ),
@@ -104,24 +104,24 @@ export abstract class EntityEffect<TModel, THttpServiceExtension extends IHttpSe
       observeOn(asyncScheduler)
     )
   });
-    
 
-  fetchById$ = this.httpService.getById
+
+  getById$ = this.httpService.getById
     ? createEffect(() => this.actions$.pipe(
-        ofType(this.actions.fetchById),
+        ofType(this.actions.getById),
         map((action: any) => action.id),
         switchMap((id: string) =>
           this.httpService.getById!(id).pipe(
             map(({ data }: ICartesianResponse) => {
               if (!data) {
-                console.warn(`[${this.entityName}] fetchById returned no data for id: ${id}`);
+                console.warn(`[${this.entityName}] getById returned no data for id: ${id}`);
               }
               return this.actions.select({ entity: data });
             }),
             catchError((error) => {
               const { message, errors } = extractErrorInfo(error);
-              this.logError('fetchById', { id }, error);
-              return of(this.actions.fetchFailure({ errors, message }));
+              this.logError('getById', { id }, error);
+              return of(this.actions.getFailure({ errors, message }));
             })
           )
         ),

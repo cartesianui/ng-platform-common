@@ -254,7 +254,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
         // If we have a pending value (initial value set), try to fetch it by id first
         if (this.pendingRawValue != null && (isUuid(this.pendingRawValue) || isValidInteger(this.pendingRawValue))) {
-          this.fetchItemById(this.pendingRawValue);
+          this.getItemById(this.pendingRawValue);
         }
 
         this.items$ = new Observable((observer: Observer<string | undefined>) => {
@@ -346,7 +346,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   }
 
   // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
-  private fetchItemById(id: any): void {
+  private getItemById(id: any): void {
     // Prevent duplicate fetches for the same ID
     if (this.lastFetchedId === id) {
       return;
@@ -646,7 +646,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // If we have a URL configured and the value is a valid ID, fetch it immediately
       const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
       if (url && value != null && (isUuid(value) || isValidInteger(value))) {
-        this.fetchItemById(value);
+        this.getItemById(value);
       }
     } else {
       this.setResolvedValue(value);
