@@ -35,6 +35,31 @@ export function SearchMeta(where: WhereItem) {
   };
 }
 
+/**
+ * Class decorator: define list, form, and search metadata in one place.
+ * Uses the same metadata keys as @ListMeta, @FormMeta, @SearchMeta.
+ */
+export function EntityMeta(config: {
+  list?: FieldDescriptor[];
+  form?: FieldDescriptor[];
+  search?: SearchForm;
+}) {
+  return (ctor: any) => {
+    if (config.list) {
+      Reflect.defineMetadata(LIST_KEY, config.list, ctor);
+    }
+    if (config.form) {
+      Reflect.defineMetadata(FORM_KEY, config.form, ctor);
+    }
+    if (config.search) {
+      // Convert SearchForm { key: WhereItem } to the internal format { key: WhereItem[] }
+      const searchMap: Record<string, WhereItem[]> = {};
+      Object.entries(config.search).forEach(([k, v]) => { searchMap[k] = [v]; });
+      Reflect.defineMetadata(SEARCH_KEY, searchMap, ctor);
+    }
+  };
+}
+
 export class FieldMetaBuilder {
   static buildList(ctor:any): FieldDescriptor[] {
     return Reflect.getMetadata(LIST_KEY, ctor) ?? [];

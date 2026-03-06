@@ -1,25 +1,45 @@
 # @cartesianui/common
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 14.2.8.
+Shared platform library for CartesianUI Angular applications. Provides base classes, utilities, and infrastructure that all feature libraries build on.
 
-## Code scaffolding
+## Modules
 
-Run `ng generate component component-name --project core` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project common`.
+| Module | Description | Docs |
+|--------|-------------|------|
+| [Models](src/lib/models/) | Entity definition, decorators (`@EntityMeta`, `@ListMeta`, `@FormMeta`), form binding, datatable formatting, value display | [DOCUMENTATION.md](src/lib/models/DOCUMENTATION.md) |
+| [Store](src/lib/store/) | NgRx state management — entity actions, reducer, effects factories, `EntitySandbox` | [DOCUMENTATION.md](src/lib/store/DOCUMENTATION.md) |
+| [Form](src/lib/form/) | Form infrastructure — `FormBaseComponent`, validation, reusable controls, repeatable forms, configurable form builder | [DOCUMENTATION.md](src/lib/form/DOCUMENTATION.md) |
+| [Datatable](src/lib/datatable/) | Listing infrastructure — `ListingControlsComponent`, `AppDatatableComponent` wrapper, column/detail directives | [DOCUMENTATION.md](src/lib/datatable/DOCUMENTATION.md) |
+| [Directives](src/lib/directives/) | Shared directives (busy overlay, etc.) | — |
+| [Pipes](src/lib/pipes/) | Shared pipes | — |
+| [Services](src/lib/services/) | Shared services | — |
+| [Widgets](src/lib/widgets/) | Reusable UI widgets | — |
+| [Helpers](src/lib/helpers/) | Utility functions | — |
+| [Animations](src/lib/animations/) | Shared Angular animations | — |
 
-> Note: Don't forget to add `--project common` or else it will be added to the default project in your `angular.json` file.
+## How Modules Connect
+
+```
+Models (@EntityMeta)
+  ├── defines form fields    → Form (FormBaseComponent.initForm())
+  ├── defines datatable cols → Datatable (ListingControlsComponent.loadEntityMetadata())
+  └── defines search form    → Datatable (criteria filtering)
+
+Store (EntitySandbox)
+  ├── provides entities()    → Datatable (rows)
+  ├── provides selected()    → Form (edit patching)
+  ├── provides pagination()  → Datatable (paging)
+  └── provides requestState  → Form (busy state)
+```
 
 ## Build
 
-Run `ng build common` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+ng build common
+```
 
 ## Publishing
 
-After building your library with `ng build common`, go to the dist folder `cd dist/common` and run `npm publish`.
-
-## Running unit tests
-
-Run `ng test core` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```bash
+cd dist/common && npm publish
+```

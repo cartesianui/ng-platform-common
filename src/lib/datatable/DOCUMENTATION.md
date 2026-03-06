@@ -7,10 +7,10 @@ Listing infrastructure for CartesianUI. Provides a base controller class for all
 ```
 datatable/
   listing-controls.component.ts   # Abstract base class — pagination, sorting, selection, criteria
-  datatable.component.ts           # (Planned) Shared wrapper — centralizes template boilerplate
-  datatable.component.html         # (Planned) Wrapper template with default config + content projection
-  datatable-column.directive.ts    # (Planned) Directive for custom/extra column templates
-  datatable-detail.directive.ts    # (Planned) Directive for row-detail content projection
+  datatable.component.ts           # Shared wrapper — centralizes template boilerplate
+  datatable.component.html         # Wrapper template with default config + content projection
+  datatable-column.directive.ts    # Directive for custom/extra column templates
+  datatable-detail.directive.ts    # Directive for row-detail content projection
   types.ts                         # IPaginationModel, IPaginationLinks
   index.ts                         # Barrel exports
 ```
@@ -22,11 +22,11 @@ ListingControlsComponent (abstract base — logic layer)
   └── provides: columns, headers, selected, pagination, criteria
   └── methods: setPage(), setSorting(), onSelect(), loadEntityMetadata(), initCriteria()
 
-DatatableComponent (planned — template layer)
+AppDatatableComponent (template layer)
   └── wraps <ngx-datatable> with sensible defaults
   └── renders checkbox column, dynamic columns, cell formatting
   └── supports custom column overrides via dtColumn directive
-  └── supports expandable row-detail via dtDetail directive
+  └── supports expandable row-detail via [detailTemplate] input
 ```
 
 ## ListingControlsComponent
@@ -86,7 +86,7 @@ export class ProductListingComponent
 | `hydrateSearchCriteria()` | Read search params from URL query string |
 | `list()` | **Abstract** — must implement to call sandbox fetch |
 
-## DatatableComponent (Planned)
+## AppDatatableComponent
 
 Shared wrapper that replaces ~50 lines of repeated ngx-datatable boilerplate in every listing template.
 
@@ -118,6 +118,7 @@ Shared wrapper that replaces ~50 lines of repeated ngx-datatable boilerplate in 
 | `sortType` | `string` | `'single'` | Sort mode |
 | `showCheckboxColumn` | `boolean` | `true` | Show checkbox select column |
 | `detailRowHeight` | `number \| string` | `'auto'` | Row-detail expanded height |
+| `detailTemplate` | `TemplateRef` | `null` | Template for expandable row detail |
 
 ### Outputs
 
@@ -133,7 +134,7 @@ Shared wrapper that replaces ~50 lines of repeated ngx-datatable boilerplate in 
 
 | Method | Description |
 |--------|-------------|
-| `toggleExpandRow(row)` | Expand/collapse a row's detail (only when `dtDetail` is projected) |
+| `toggleExpandRow(row)` | Expand/collapse a row's detail (only when `detailTemplate` is provided) |
 
 ### Basic Usage
 
@@ -209,7 +210,7 @@ Use `dtColumn` with a `__` prefix to append extra columns after the dynamic ones
 
 ### Row Detail (Expandable Rows)
 
-Use `dtDetail` directive to project expandable row content. The wrapper auto-adds an expand/collapse chevron column when a detail template is provided.
+Pass a `TemplateRef` via the `[detailTemplate]` input to enable expandable row content. The wrapper auto-adds an expand/collapse chevron column when a detail template is provided.
 
 Used by: Purchase Order, Delivery Note, Receive Note, Return Note, Journal Voucher.
 
@@ -221,25 +222,25 @@ Used by: Purchase Order, Delivery Note, Receive Note, Return Note, Journal Vouch
   [offset]="getOffsetFromPagination()"
   [limit]="sb.purchaseOrder.pagination()?.perPage"
   [selected]="selected"
+  [detailTemplate]="poDetail"
   (selectChange)="onSelect($event)"
   (pageChange)="setPage($event)"
   (editClick)="onEdit($event)"
->
-  <!-- Row detail: projected inside <ngx-datatable-row-detail> -->
-  <ng-template dtDetail let-row="row" let-expanded="expanded">
-    <div class="row p2 ms-0 w-100 dt-detail-content p-2">
-      <div class="col-md-2 d-flex justify-content-center align-items-center highlight">
-        <div class="diagonal-text ucase"># {{ row.documentNumber }}</div>
-      </div>
-      <div class="col-md-10">
-        <admin-purchase-order-item-list [rows]="row.items"></admin-purchase-order-item-list>
-      </div>
-      <div class="col-md-12 alert alert-light mt-2">
-        <strong>Notes:</strong> {{ row.notes }}
-      </div>
+></app-datatable>
+
+<ng-template #poDetail let-row="row" let-expanded="expanded">
+  <div class="row p2 ms-0 w-100 dt-detail-content p-2">
+    <div class="col-md-2 d-flex justify-content-center align-items-center highlight">
+      <div class="diagonal-text ucase"># {{ row.documentNumber }}</div>
     </div>
-  </ng-template>
-</app-datatable>
+    <div class="col-md-10">
+      <admin-purchase-order-item-list [rows]="row.items"></admin-purchase-order-item-list>
+    </div>
+    <div class="col-md-12 alert alert-light mt-2">
+      <strong>Notes:</strong> {{ row.notes }}
+    </div>
+  </div>
+</ng-template>
 ```
 
 In the parent `.ts`, toggle expansion via the wrapper's public method:
@@ -253,7 +254,7 @@ toggleExpandRow(row: any) {
 ```
 
 The wrapper automatically:
-- Renders `<ngx-datatable-row-detail>` when `dtDetail` is projected
+- Renders `<ngx-datatable-row-detail>` when `detailTemplate` is provided
 - Appends a chevron expand/collapse button column at the end
 - Exposes `toggleExpandRow(row)` as a public method
 - Emits `detailToggle` when rows expand/collapse
