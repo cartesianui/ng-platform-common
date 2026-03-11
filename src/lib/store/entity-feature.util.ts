@@ -88,6 +88,7 @@ export function entityFeature<T, TStateExtension extends Record<string, any> = {
     on(actions.delete, (state, { id }) =>
       adapter.removeOne(id, {
         ...state,
+        selected: (state.selected as any)?.id === id ? null : state.selected,
         meta: updateMetaState(state.meta, 'delete')
       })
     ),

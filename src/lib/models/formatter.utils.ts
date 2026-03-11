@@ -65,8 +65,15 @@ export function formatDate(
 ): any {
   try {
     switch (target) {
-      case 'dt':
       case 'form':
+        if (value instanceof Date) return value;
+        if (formatter?.from) {
+          return DatetimeService.fromFormat(value, formatter.from).toJSDate();
+        } else {
+          return DatetimeService.fromISO(value).toJSDate();
+        }
+
+      case 'dt':
         if (formatter?.from) {
           return DatetimeService.fromFormat(value, formatter.from, formatter?.to ?? DateFormat.SHORT);
         } else {

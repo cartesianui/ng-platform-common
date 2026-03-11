@@ -60,6 +60,7 @@ export interface EntityStateExtended<T> extends NgRxEntityState<T> {
  */
 
 export const updateMetaState = (meta: ResponseMeta, action: string): ResponseMeta => {
+  if (!meta?.pagination) return meta;
   switch (action) {
     case 'add':
       return { ...meta, pagination: { ...meta.pagination, total: meta.pagination.total + 1, count: meta.pagination.count + 1 } };
