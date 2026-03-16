@@ -3,7 +3,8 @@
 import { ValidatorFn } from '@angular/forms';
 import { DateFormat } from '../services';
 
-export type FormatterType = 'date' | 'jdate' | 'number' | 'currency' | 'pattern' | 'func' | 'multiline';
+export type BuiltInFormatterType = 'date' | 'jdate' | 'number' | 'currency' | 'pattern' | 'func' | 'multiline';
+export type FormatterType = BuiltInFormatterType | (string & {});
 
 // Badge color options
 export type BadgeColor = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'dark' | 'light';
@@ -48,6 +49,7 @@ export type FormatterOptions = {
 
 export type FieldDescriptor = {
   key: string;
+  dataKey?: string;
   label: string;
   defaultValue?: any;
   opt?: {

@@ -19,7 +19,7 @@ export function formatForDb(
   evalPattern: (pattern: string) => string
 ): any {
   try {
-    let value = model.getValue(col.key);
+    let value = model.getValue(col.dataKey || col.key);
     const formatter = col?.opt?.formatter;
 
     if (formatter?.type) {
@@ -38,10 +38,10 @@ export function formatForDb(
   } catch (error) {
     console.error(`[form.formatForDb] Error formatting field="${col.key}"`, {
       field: col,
-      value: model.getValue(col.key),
+      value: model.getValue(col.dataKey || col.key),
       error
     });
-    return model.getValue(col.key) ?? '';
+    return model.getValue(col.dataKey || col.key) ?? '';
   }
 }
 
@@ -54,7 +54,7 @@ export function formatForForm(
   evalPattern: (pattern: string) => string
 ): any {
   try {
-    let value = model.getValue(col.key);
+    let value = model.getValue(col.dataKey || col.key);
 
     if (value === null && col.defaultValue !== undefined) {
       value = col.defaultValue;
@@ -78,10 +78,10 @@ export function formatForForm(
   } catch (error) {
     console.error(`[form.formatForForm] Error formatting field="${col.key}"`, {
       field: col,
-      value: model.getValue(col.key),
+      value: model.getValue(col.dataKey || col.key),
       error
     });
-    return model.getValue(col.key) ?? col.defaultValue ?? '';
+    return model.getValue(col.dataKey || col.key) ?? col.defaultValue ?? '';
   }
 }
 
@@ -97,7 +97,7 @@ export function toFormGroup(
     const formControls: { [key: string]: FormControl } = {};
 
     const entries = formFields.map((field: any) => {
-      const value = (model as any)[field.key] ?? (field.defaultValue ?? null);
+      const value = model.getValue(field.dataKey || field.key) ?? (field.defaultValue ?? null);
       return {
         key: field.key,
         label: field.label ?? field.key,

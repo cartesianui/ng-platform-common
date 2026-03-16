@@ -10,7 +10,7 @@ export function entityActions<TModel, TName extends string>(entityName: TName) {
     events: {
       'Load': props<{ entities: TModel[]; meta: ResponseMeta }>(),
       'Get All': props<{ criteria: RequestCriteriaOuput }>(),
-      'Get By Id': props<{ id: string }>(),
+      'Get By Id': props<{ id: string; includes?: string }>(),
 
       //quick CRUD actions
       'Add': props<{ entity: TModel }>(),

@@ -1,59 +1,6 @@
 import { DatetimeService, DateFormat } from '../services';
 import { FormatterOptions, BadgeColor } from './types';
-
-/**
- * Format a value based on formatter options and target context
- * @param target - 'db' | 'form' | 'dt' (database, form, datatable)
- * @param value - The value to format
- * @param formatter - Formatter options
- * @param model - The model instance (for multiline/pattern access)
- */
-export function formatValue(
-  target: 'db' | 'form' | 'dt',
-  value: any,
-  formatter: FormatterOptions | undefined,
-  model: { getValue: (key: string) => any }
-): any {
-  const type = formatter?.type ?? '';
-  try {
-    switch (type) {
-      case 'date':
-        return formatDate(target, value, formatter);
-
-      case 'number':
-        return new Intl.NumberFormat(formatter?.locale || 'en-US').format(Number(value));
-
-      case 'currency':
-        return new Intl.NumberFormat(formatter?.locale || 'en-US', {
-          style: 'currency',
-          currency: formatter?.currency || 'USD'
-        }).format(Number(value));
-
-      case 'func':
-        if (typeof formatter?.func === 'function') {
-          return formatter.func(value, model);
-        }
-        return value;
-
-      case 'multiline':
-        return formatMultiline(formatter, model);
-
-      default:
-        // Handle displayAs for single values without a specific type
-        if (formatter?.displayAs && target === 'dt') {
-          return wrapWithDisplayStyle(value, formatter);
-        }
-        return value;
-    }
-  } catch (error) {
-    console.error(`[formatter.formatValue] Error formatting value for target="${target}", type="${type}"`, {
-      value,
-      formatter,
-      error
-    });
-    return value;
-  }
-}
+import { FormatterRegistry } from './formatter.registry';
 
 /**
  * Format date value based on target context
@@ -220,3 +167,64 @@ export function wrapWithDisplayStyle(value: any, formatter: FormatterOptions): s
       return customClass ? `<span class="${customClass}">${displayValue}</span>` : displayValue;
   }
 }
+
+/**
+ * Format a value based on formatter options and target context.
+ * Dispatches to the FormatterRegistry which holds both built-in and custom formatters.
+ */
+export function formatValue(
+  target: 'db' | 'form' | 'dt',
+  value: any,
+  formatter: FormatterOptions | undefined,
+  model: { getValue: (key: string) => any }
+): any {
+  const type = formatter?.type ?? '';
+  try {
+    // Look up formatter in registry (built-in + custom)
+    const registeredFn = FormatterRegistry.get(type);
+    if (registeredFn) {
+      return registeredFn(target, value, formatter!, model);
+    }
+
+    // Fallback: handle displayAs for single values without a specific type
+    if (formatter?.displayAs && target === 'dt') {
+      return wrapWithDisplayStyle(value, formatter);
+    }
+    return value;
+  } catch (error) {
+    console.error(`[formatter.formatValue] Error formatting value for target="${target}", type="${type}"`, {
+      value,
+      formatter,
+      error
+    });
+    return value;
+  }
+}
+
+// ─── Register built-in formatters ───────────────────────────────────────────
+
+FormatterRegistry.register('date', (target, value, formatter) => {
+  return formatDate(target, value, formatter);
+});
+
+FormatterRegistry.register('number', (_target, value, formatter) => {
+  return new Intl.NumberFormat(formatter?.locale || 'en-US').format(Number(value));
+});
+
+FormatterRegistry.register('currency', (_target, value, formatter) => {
+  return new Intl.NumberFormat(formatter?.locale || 'en-US', {
+    style: 'currency',
+    currency: formatter?.currency || 'USD'
+  }).format(Number(value));
+});
+
+FormatterRegistry.register('func', (_target, value, formatter, model) => {
+  if (typeof formatter?.func === 'function') {
+    return formatter.func(value, model);
+  }
+  return value;
+});
+
+FormatterRegistry.register('multiline', (_target, _value, formatter, model) => {
+  return formatMultiline(formatter, model);
+});

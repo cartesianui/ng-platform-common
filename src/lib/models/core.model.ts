@@ -53,6 +53,9 @@ export class CoreModel {
   }
 
   getValue(property: string): any {
-    return Object.prototype.hasOwnProperty.call(this, property) ? this[property] : null;
+    if (!property.includes('.')) {
+      return Object.prototype.hasOwnProperty.call(this, property) ? this[property] : null;
+    }
+    return property.split('.').reduce((obj, key) => obj?.[key], this as any) ?? null;
   }
 }

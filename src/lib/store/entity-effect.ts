@@ -109,9 +109,9 @@ export abstract class EntityEffect<TModel, THttpServiceExtension extends IHttpSe
   getById$ = this.httpService.getById
     ? createEffect(() => this.actions$.pipe(
         ofType(this.actions.getById),
-        map((action: any) => action.id),
-        switchMap((id: string) =>
-          this.httpService.getById!(id).pipe(
+        map((action: any) => ({ id: action.id, includes: action.includes })),
+        switchMap(({ id, includes }: { id: string; includes?: string }) =>
+          this.httpService.getById!(id, includes).pipe(
             map(({ data }: ICartesianResponse) => {
               if (!data) {
                 console.warn(`[${this.entityName}] getById returned no data for id: ${id}`);

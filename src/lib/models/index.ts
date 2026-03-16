@@ -1,4 +1,5 @@
 export * from './types';
+export * from './formatter.registry';
 export * from './formatter.utils';
 export * from './form.utils';
 export * from './datatable.utils';

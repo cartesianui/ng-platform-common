@@ -11,7 +11,7 @@ export function formatForDataTable(
   evalPattern: (pattern: string) => string
 ): any {
   try {
-    let value = model.getValue(col.key);
+    let value = model.getValue(col.dataKey || col.key);
     const formatter = col?.opt?.formatter;
 
     if (formatter?.type) {
@@ -35,10 +35,10 @@ export function formatForDataTable(
   } catch (error) {
     console.error(`[datatable.formatForDataTable] Error formatting field="${col.key}"`, {
       field: col,
-      value: model.getValue(col.key),
+      value: model.getValue(col.dataKey || col.key),
       error
     });
-    return model.getValue(col.key) ?? '';
+    return model.getValue(col.dataKey || col.key) ?? '';
   }
 }
 
