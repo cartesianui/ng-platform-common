@@ -62,7 +62,7 @@
 
         <!-- Normal Cell -->
         <ng-template #normalCell>
-          <ng-container *ngIf="col?.opt?.formatter?.displayAs || col?.opt?.formatter?.type === 'multiline'; else plainCell">
+          <ng-container *ngIf="col?.opt?.formatter?.displayAs || col?.opt?.formatter?.type === 'multiline' || isCustomFormatter(col); else plainCell">
             <span [innerHTML]="row.dtFormatted(col)"></span>
           </ng-container>
           <ng-template #plainCell>{{ row.dtFormatted(col) }}</ng-template>

@@ -6,6 +6,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { NgxDatatableModule, DatatableComponent as NgxDatatableComponent } from '@swimlane/ngx-datatable';
 import { DatatableColumnDirective } from './datatable-column.directive';
+import { FormatterRegistry } from '../models/formatter.registry';
 
 @Component({
   selector: 'app-datatable',
@@ -89,5 +90,9 @@ export class AppDatatableComponent {
 
   get extraColumns(): DatatableColumnDirective[] {
     return this.customColumns?.filter(c => c.columnKey.startsWith('__')) ?? [];
+  }
+
+  isCustomFormatter(col: any): boolean {
+    return !!col?.opt?.formatter?.type && FormatterRegistry.has(col.opt.formatter.type);
   }
 }
