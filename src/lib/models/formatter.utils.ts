@@ -70,9 +70,17 @@ export function formatMultiline(
     try {
       if (!item.key) continue;
 
-      const value = model.getValue(item.key);
+      let value = model.getValue(item.key);
       if (value === undefined || value === null || value === '') {
         continue;
+      }
+
+      // Apply type-based formatting (date, number, currency) before display styling
+      if (item.type && item.type !== 'multiline') {
+        const typeFn = FormatterRegistry.get(item.type);
+        if (typeFn) {
+          value = typeFn('dt', value, item, model);
+        }
       }
 
       const html = wrapWithDisplayStyle(value, item);

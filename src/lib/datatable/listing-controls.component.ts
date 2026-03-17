@@ -1,6 +1,8 @@
 import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect, ChangeDetectorRef, untracked } from '@angular/core';
 import { ElementRef, ViewChild, runInInjectionContext, DestroyRef } from '@angular/core';
 import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
+import { ExportService, ExportFormat } from '../services/export.service';
+import { SearchFieldDescriptor } from '../models/types';
 import { BaseComponent } from '../base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
 import { IPaginationModel } from './types';
@@ -16,6 +18,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
 
   protected criteriaFactory = inject(RequestCriteriaFactory);
   protected cdr = inject(ChangeDetectorRef);
+  protected exportService = inject(ExportService);
 
   // use if data is passed from parent
   @Input()
@@ -40,6 +43,8 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   headers: { name: string; prop?: string }[] = [];
 
   searchForm: SearchForm;
+
+  searchFields: SearchFieldDescriptor[] = [];
 
   criteria: RequestCriteria;
 
@@ -79,6 +84,7 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
     this.columns = this.entityConstructor.getDataTableCols?.() ?? [];
     this.headers = this.entityConstructor.getDataTableHeaders?.() ?? [];
     this.searchForm = this.entityConstructor.getSearchForm?.() ?? {};
+    this.searchFields = this.entityConstructor.getSearchFields?.() ?? [];
   }
 
   ngAfterViewInit(): void {
@@ -90,15 +96,23 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   initCriteria(): RequestCriteria {
     this.criteria = this.criteriaFactory.create(this.searchForm);
 
+    // Hydrate criteria from URL query params synchronously
+    const urlParams = new URLSearchParams(this.router.url.split('?')[1] || '');
+    const params: Record<string, string> = {};
+    urlParams.forEach((v, k) => params[k] = v);
+    if (params['search']) {
+      this.criteria.hydrateFromUrl(params);
+    }
+
     runInInjectionContext(this.injector, () => {
       effect(() => {
-        // console.log('🔄 Criteria updated →', this.criteria?.queryString?.());
+        // Read queryString signal so Angular tracks it as a dependency
+        const qs = this.criteria?.queryString?.();
         // Defer list() to avoid ExpressionChangedAfterItHasBeenCheckedError
-        // Delay execution to ensure navigation CD cycles are complete
         setTimeout(() => {
           this.list();
           this.appendSearchCriteriaToUrl();
-        }, 100); // 100ms delay ensures all navigation state updates are complete
+        }, 100);
       }, { allowSignalWrites: true });
     });
 
@@ -106,11 +120,11 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   }
 
   setPage(event): void {
-    this.criteria.page(this.covertOffsetToPageNumber(event.offset));
+    this.criteria?.page(this.covertOffsetToPageNumber(event.offset));
   }
 
   setSorting(event): void {
-    this.criteria.orderBy(event.column.name, event.newValue);
+    this.criteria?.orderBy(event.column.name, event.newValue);
   }
 
   onSelect(event): void {
@@ -153,13 +167,26 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   hydrateSearchCriteria(): void {
     this.subscriptions.push(
       this.route.queryParams.subscribe((params) => {
-        if (params['search']) this.criteria.initForm(params['search'] ?? '');
+        if (params['search']) {
+          this.criteria.hydrateFromUrl(params as Record<string, string>);
+        }
       })
     );
   }
 
   appendSearchCriteriaToUrl() {
     this._location.replaceState(`${this.router.url.split('?')[0]}${ '?' + this.criteria.queryString()}`);
+  }
+
+  /**
+   * Export current listing data. Pass the API endpoint path.
+   * Uses existing criteria (filters, search, sorting) — just adds output format.
+   * @example onExport('/products')
+   * @example onExport('/products', 'xlsx')
+   * @example onExport('/products', 'csv', ['name', 'status', 'barcode'])
+   */
+  onExport(endpoint: string, format: ExportFormat = 'csv', columns?: string[]): void {
+    this.exportService.export(endpoint, this.criteria.httpParams(), format, columns);
   }
 
   protected abstract list(): void;

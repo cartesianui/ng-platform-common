@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { SearchForm } from '@cartesianui/core';
+import { SearchFieldDescriptor } from './models/types';
 
 export type ChildComponent = { [key: string]: string | { [key: string]: string } };
 
@@ -16,6 +17,7 @@ export interface EntityStatic<T> {
   getDataTableCols?(): any[];
   getDataTableHeaders?(): any[];
   getSearchForm?(): SearchForm;
+  getSearchFields?(): SearchFieldDescriptor[];
   toForm?(patch?: Partial<this>): FormGroup;
   fromForm?(FormGroup): T;
 }

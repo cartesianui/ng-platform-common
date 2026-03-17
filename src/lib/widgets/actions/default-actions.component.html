@@ -1,39 +1,8 @@
 <div class="app-actions mb-2">
   <div class="row g-2 align-items-stretch">
-    <!-- Left Side (Search & Date Filters) -->
+    <!-- Left Side (Search) -->
     <div class="col-md-7 justify-content-start">
       <div class="d-flex flex-wrap align-items-stretch gap-2">
-        <!-- Start Date -->
-        <input
-          *ngIf="dateChange.subscriberCount"
-          bsDatepicker
-          class="form-control form-control-sm"
-          placeholder="Start Date"
-          (change)="onDateChange('start', $event)"
-          [(ngModel)]="startDate"
-          style="width: 140px"
-        />
-
-        <!-- End Date -->
-        <input
-          *ngIf="dateChange.subscriberCount"
-          bsDatepicker
-          class="form-control form-control-sm"
-          placeholder="End Date"
-          (change)="onDateChange('end', $event)"
-          [(ngModel)]="endDate"
-          style="width: 140px"
-        />
-
-        <!-- Date Range -->
-        <div *ngIf="dateRangeChange.subscriberCount" class="input-group input-group-sm" style="width: 240px">
-          <span class="input-group-text bg-white">
-            <i class="fas fa-calendar-alt text-muted"></i>
-          </span>
-
-          <input bsDaterangepicker class="form-control" placeholder="Select date range" (bsValueChange)="onDateRangeChange($event)" />
-        </div>
-
         <!-- Search Bar -->
         <div *ngIf="searchChange.subscriberCount" class="input-group input-group-sm" style="width: 240px">
           <span class="input-group-text bg-white">

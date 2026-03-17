@@ -27,9 +27,10 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
 
   ngOnInit() {
     if (!this.validateDirective) {
-      throw new Error('Without validate directive <with-validation></with-validation> is a useless component!');
+      console.warn('[with-validation] No validate directive found. Ensure the child control has the "validate" attribute.');
+      return;
     }
-   
+
     this.errorService.serverErrors$.subscribe((errors) => this.setServerError(errors, this.validateDirective));
   }
 

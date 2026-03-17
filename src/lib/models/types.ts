@@ -65,9 +65,26 @@ export type FieldDescriptor = {
   };
 }
 
-// export interface Deserializable {
-//   init(input: any): this;
-//   fromJSON(input: any): this;
-//   toJSON():  Record<string, any>;
-//   clone(): this;
-// }
+// ─── Search Field Descriptors ───────────────────────────────────────────────
+
+export type SearchFieldType = 'text' | 'select' | 'entity' | 'date' | 'daterange' | 'number' | 'boolean';
+
+export type SearchFieldDescriptor = {
+  key: string;              // camelCase field name (maps to WhereItem.column)
+  label?: string;           // Display label (auto-generated from key if omitted)
+  operator?: string;        // '=' | 'like' | 'between' | 'in' (default: '=')
+  type?: SearchFieldType;   // UI control type (default: 'text')
+  // Entity lookup options (when type: 'entity')
+  url?: string;             // API endpoint for selectable-control
+  optionField?: string;     // Display field (default: 'name')
+  optionKey?: string;       // Value field (default: 'id')
+  // Select options (when type: 'select')
+  options?: { label: string; value: string }[];
+  // General
+  placeholder?: string;
+  hidden?: boolean;         // Include in criteria but don't show in UI
+  width?: string;           // CSS col width hint (e.g. '2' for col-2, '3' for col-3)
+};
+
+// Input type for EntityMeta search: accepts shorthand strings, full descriptors, or legacy format
+export type SearchMetaInput = (string | SearchFieldDescriptor)[] | Record<string, any>;
