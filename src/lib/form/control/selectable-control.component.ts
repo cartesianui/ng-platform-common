@@ -267,9 +267,17 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             const field = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
               ? ObjectUtils.convertKey(this.optionField(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
               : this.optionField();
+            const key = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
+              ? ObjectUtils.convertKey(this.optionKey(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
+              : this.optionKey();
             return this.http
               .get<any>(`${AppConfig.remoteServiceBaseUrl}${urlValue}`, {
-                params: { search: `${field}:${query}`, searchFields: `${field}:like` }
+                params: {
+                  search: `${field}:${query}`,
+                  searchFields: `${field}:like`,
+                  output: 'lookup',
+                  lookup: `${key},${field}`
+                }
               })
               .pipe(
                 map((res) => {
