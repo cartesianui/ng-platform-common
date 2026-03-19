@@ -81,7 +81,7 @@ import { DatetimeService } from '../../services';
                   (ngModelChange)="onSelectModel(field, $event)"
                 >
                   <option value="">{{ field.placeholder || field.label || readableName(field.key) }}</option>
-                  <option *ngFor="let opt of field.options" [value]="opt.value">{{ opt.label }}</option>
+                  <option *ngFor="let opt of field.options" [value]="opt.value">{{ opt.label || opt.name }}</option>
                 </select>
               </ng-container>
 
@@ -152,32 +152,49 @@ import { DatetimeService } from '../../services';
   `,
   styles: [`
     .search-panel-wrapper {
-      border: 1px solid #e9ecef;
+      border: 1px solid #e0e0e0;
       border-radius: 0.375rem 0.375rem 0 0;
       border-bottom: none;
-      background: #f8f9fa;
+      background: #fafbfc;
       padding: 0.5rem 0.75rem;
     }
 
     .search-panel-toggle {
       cursor: pointer;
       user-select: none;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: #6c757d;
+      transition: color 0.15s ease;
     }
 
     .search-panel-toggle:hover {
-      color: #495057;
+      color: #343a40;
+    }
+
+    .search-panel-toggle .badge {
+      font-size: 0.65rem;
+      vertical-align: middle;
     }
 
     .search-panel-body {
-      display: none;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease, padding 0.25s ease;
+      border-top: 0 solid transparent;
+    }
+
+    .search-panel-body.show {
+      max-height: 300px;
+      overflow: visible;
+      padding-top: 0.5rem;
       border-top: 1px solid #e9ecef;
       margin-top: 0.5rem;
     }
 
-    .search-panel-body.show {
-      display: block;
+    /* Quick search input */
+    .search-panel-wrapper .input-group .form-control:focus {
+      box-shadow: none;
+      border-color: #86b7fe;
     }
 
     /* Match selectable-control height to form-control-sm */
@@ -185,6 +202,7 @@ import { DatetimeService } from '../../services';
       min-height: 31px !important;
       font-size: 0.875rem;
       padding: 0.25rem 0.5rem !important;
+      background: #fff;
     }
 
     :host ::ng-deep selectable-control .lookup-input-wrapper input {
@@ -193,6 +211,12 @@ import { DatetimeService } from '../../services';
 
     :host ::ng-deep selectable-control .lookup-input-wrapper .badge {
       font-size: 0.75rem;
+    }
+
+    /* Clear button */
+    .btn-outline-secondary {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.5rem;
     }
   `]
 })
