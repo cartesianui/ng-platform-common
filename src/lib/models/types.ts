@@ -43,8 +43,10 @@ export type FormatterOptions = {
   // Custom value mapping (for enums, status fields, booleans, etc.)
   valueMap?: ValueMap;       // Maps raw values to labels and colors
   // Multiline formatter options (type: 'multiline')
-  items?: FormatterOptions[];  // Nested formatters, each with its own key
-  separator?: 'br' | 'space' | 'none';  // How to separate items (default: 'br')
+  // Each item can be a single FormatterOptions or an array of FormatterOptions (grouped on same line)
+  items?: (FormatterOptions | FormatterOptions[])[];
+  separator?: 'br' | 'space' | 'none';  // How to separate lines (default: 'br')
+  groupSeparator?: string;  // Separator between grouped items on same line (default: '|')
 }
 
 export type FieldDescriptor = {
@@ -79,7 +81,7 @@ export type SearchFieldDescriptor = {
   optionField?: string;     // Display field (default: 'name')
   optionKey?: string;       // Value field (default: 'id')
   // Select options (when type: 'select')
-  options?: { label: string; value: string }[];
+  options?: { label?: string; name?: string; value: string }[];
   // General
   placeholder?: string;
   hidden?: boolean;         // Include in criteria but don't show in UI

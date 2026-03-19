@@ -63,39 +63,67 @@ export function formatMultiline(
 
   const separator = formatter.separator ?? 'br';
   const separatorHtml = separator === 'br' ? '<br>' : separator === 'space' ? ' ' : '';
+  const groupSep = formatter.groupSeparator ?? '|';
+  const groupSepHtml = ` <span class="text-muted mx-1">${groupSep}</span> `;
 
-  const parts: string[] = [];
+  const lines: string[] = [];
 
   for (const item of formatter.items) {
     try {
-      if (!item.key) continue;
-
-      let value = model.getValue(item.key);
-      if (value === undefined || value === null || value === '') {
-        continue;
-      }
-
-      // Apply type-based formatting (date, number, currency) before display styling
-      if (item.type && item.type !== 'multiline') {
-        const typeFn = FormatterRegistry.get(item.type);
-        if (typeFn) {
-          value = typeFn('dt', value, item, model);
+      // Grouped items: array of FormatterOptions rendered on same line
+      if (Array.isArray(item)) {
+        const groupParts: string[] = [];
+        for (const subItem of item) {
+          const html = formatSingleItem(subItem, model);
+          if (html) {
+            groupParts.push(html);
+          }
+        }
+        if (groupParts.length > 0) {
+          lines.push(groupParts.join(groupSepHtml));
+        }
+      } else {
+        // Single item: one field per line
+        const html = formatSingleItem(item, model);
+        if (html) {
+          lines.push(html);
         }
       }
-
-      const html = wrapWithDisplayStyle(value, item);
-      if (html) {
-        parts.push(html);
-      }
     } catch (error) {
-      console.error(`[formatter.formatMultiline] Error processing item key="${item.key}"`, {
+      const key = Array.isArray(item) ? item.map(i => i.key).join(',') : item.key;
+      console.error(`[formatter.formatMultiline] Error processing item key="${key}"`, {
         item,
         error
       });
     }
   }
 
-  return parts.join(separatorHtml);
+  return lines.join(separatorHtml);
+}
+
+/**
+ * Format a single multiline item
+ */
+function formatSingleItem(
+  item: FormatterOptions,
+  model: { getValue: (key: string) => any }
+): string {
+  if (!item.key) return '';
+
+  let value = model.getValue(item.key);
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+
+  // Apply type-based formatting (date, number, currency) before display styling
+  if (item.type && item.type !== 'multiline') {
+    const typeFn = FormatterRegistry.get(item.type);
+    if (typeFn) {
+      value = typeFn('dt', value, item, model);
+    }
+  }
+
+  return wrapWithDisplayStyle(value, item);
 }
 
 /**
