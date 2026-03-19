@@ -27,7 +27,7 @@ export class AppDatatableComponent {
 
   // === Optional Inputs (with defaults) ===
   @Input() selected: any[] = [];
-  @Input() tableClass: string = 'material';
+  @Input() tableClass: string = 'material dt-light';
   @Input() columnMode: string = 'force';
   @Input() headerHeight: number = 50;
   @Input() footerHeight: number = 50;

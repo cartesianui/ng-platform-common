@@ -17,6 +17,7 @@
   (page)="onPageInternal($event)"
   (sort)="onSortInternal($event)"
   [sortType]="sortType"
+  [messages]="{ emptyMessage: 'No records found', totalMessage: 'total' }"
 >
   <!-- Row Detail (only when dtDetail is projected) -->
   <ngx-datatable-row-detail *ngIf="detailTemplate" [rowHeight]="detailRowHeight" (toggle)="onDetailToggleInternal($event)">
