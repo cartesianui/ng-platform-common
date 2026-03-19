@@ -27,7 +27,7 @@
         </button>
 
         <!-- Edit Button -->
-        <button *ngIf="edit.subscriberCount && !_hide?.edit" [disabled]="_disabled?.edit ?? false" class="btn btn-sm btn-primary" [ngClass]="getDisplayClasses()" (click)="onEdit($event)">
+        <button *ngIf="edit.subscriberCount && !_hide?.edit" [disabled]="_disabled?.edit ?? false" class="btn btn-sm btn-outline-primary" [ngClass]="getDisplayClasses()" (click)="onEdit($event)">
           <i class="fa fa-pencil" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Edit</span>
         </button>
@@ -45,13 +45,13 @@
         </button>
 
         <!-- View Button -->
-        <button *ngIf="view.subscriberCount && !_hide?.view" [disabled]="_disabled?.view ?? false" class="btn btn-sm btn-info" [ngClass]="getDisplayClasses()" (click)="onView($event)">
+        <button *ngIf="view.subscriberCount && !_hide?.view" [disabled]="_disabled?.view ?? false" class="btn btn-sm btn-outline-info" [ngClass]="getDisplayClasses()" (click)="onView($event)">
           <i class="fa fa-info-circle" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">View</span>
         </button>
 
         <!-- Delete Button -->
-        <button *ngIf="delete.subscriberCount && !_hide?.delete" [disabled]="_disabled?.delete ?? false" class="btn btn-sm btn-danger" [ngClass]="getDisplayClasses()" (click)="onDelete($event)">
+        <button *ngIf="delete.subscriberCount && !_hide?.delete" [disabled]="_disabled?.delete ?? false" class="btn btn-sm btn-outline-danger" [ngClass]="getDisplayClasses()" (click)="onDelete($event)">
           <i class="fa fa-trash" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Delete</span>
         </button>
@@ -60,7 +60,7 @@
         <button
           *ngIf="activate.subscriberCount && !_hide?.activate"
           [disabled]="_disabled?.activate ?? false"
-          class="btn btn-sm btn-success"
+          class="btn btn-sm btn-outline-success"
           [ngClass]="getDisplayClasses()"
           (click)="onActivate($event)"
         >
@@ -72,7 +72,7 @@
         <button
           *ngIf="deactivate.subscriberCount && !_hide?.deactivate"
           [disabled]="_disabled?.deactivate ?? false"
-          class="btn btn-sm btn-warning"
+          class="btn btn-sm btn-outline-warning"
           [ngClass]="getDisplayClasses()"
           (click)="onDeactivate($event)"
         >
@@ -81,49 +81,49 @@
         </button>
 
         <!-- Enable Button -->
-        <button *ngIf="enable.subscriberCount && !_hide?.enable" [disabled]="_disabled?.enable ?? false" class="btn btn-sm btn-success" [ngClass]="getDisplayClasses()" (click)="onEnable($event)">
+        <button *ngIf="enable.subscriberCount && !_hide?.enable" [disabled]="_disabled?.enable ?? false" class="btn btn-sm btn-outline-success" [ngClass]="getDisplayClasses()" (click)="onEnable($event)">
           <i class="fa fa-lock-open" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Enable</span>
         </button>
 
         <!-- Disable Button -->
-        <button *ngIf="disable.subscriberCount && !_hide?.disable" [disabled]="_disabled?.disable ?? false" class="btn btn-sm btn-warning" [ngClass]="getDisplayClasses()" (click)="onDisable($event)">
+        <button *ngIf="disable.subscriberCount && !_hide?.disable" [disabled]="_disabled?.disable ?? false" class="btn btn-sm btn-outline-warning" [ngClass]="getDisplayClasses()" (click)="onDisable($event)">
           <i class="fa fa-lock" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Disable</span>
         </button>
 
         <!-- Attach Button -->
-        <button *ngIf="attach.subscriberCount && !_hide?.attach" [disabled]="_disabled?.attach ?? false" class="btn btn-sm btn-success" [ngClass]="getDisplayClasses()" (click)="onAttach($event)">
+        <button *ngIf="attach.subscriberCount && !_hide?.attach" [disabled]="_disabled?.attach ?? false" class="btn btn-sm btn-outline-success" [ngClass]="getDisplayClasses()" (click)="onAttach($event)">
           <i class="fa fa-link" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Attach</span>
         </button>
 
         <!-- Detach Button -->
-        <button *ngIf="detach.subscriberCount && !_hide?.detach" [disabled]="_disabled?.detach ?? false" class="btn btn-sm btn-warning" [ngClass]="getDisplayClasses()" (click)="onDetach($event)">
+        <button *ngIf="detach.subscriberCount && !_hide?.detach" [disabled]="_disabled?.detach ?? false" class="btn btn-sm btn-outline-warning" [ngClass]="getDisplayClasses()" (click)="onDetach($event)">
           <i class="fa fa-unlink" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Detach</span>
         </button>
 
         <!-- Assign Button -->
-        <button *ngIf="assign.subscriberCount && !_hide?.assign" [disabled]="_disabled?.assign ?? false" class="btn btn-sm btn-success" [ngClass]="getDisplayClasses()" (click)="onAssign($event)">
+        <button *ngIf="assign.subscriberCount && !_hide?.assign" [disabled]="_disabled?.assign ?? false" class="btn btn-sm btn-outline-success" [ngClass]="getDisplayClasses()" (click)="onAssign($event)">
           <i class="fa fa-user-plus" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Assign</span>
         </button>
 
         <!-- Remove Button -->
-        <button *ngIf="remove.subscriberCount && !_hide?.remove" [disabled]="_disabled?.remove ?? false" class="btn btn-sm btn-warning" [ngClass]="getDisplayClasses()" (click)="onRemove($event)">
+        <button *ngIf="remove.subscriberCount && !_hide?.remove" [disabled]="_disabled?.remove ?? false" class="btn btn-sm btn-outline-warning" [ngClass]="getDisplayClasses()" (click)="onRemove($event)">
           <i class="fa fa-minus" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Remove</span>
         </button>
 
         <!-- Revoke Button -->
-        <button *ngIf="revoke.subscriberCount && !_hide?.revoke" [disabled]="_disabled?.revoke ?? false" class="btn btn-sm btn-warning" [ngClass]="getDisplayClasses()" (click)="onRevoke($event)">
+        <button *ngIf="revoke.subscriberCount && !_hide?.revoke" [disabled]="_disabled?.revoke ?? false" class="btn btn-sm btn-outline-warning" [ngClass]="getDisplayClasses()" (click)="onRevoke($event)">
           <i class="fa fa-ban" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Revoke</span>
         </button>
 
         <!-- Import Button -->
-        <button *ngIf="import.subscriberCount && !_hide?.import" [disabled]="_disabled?.import ?? false" class="btn btn-sm btn-info" [ngClass]="getDisplayClasses()" (click)="onImport($event)">
+        <button *ngIf="import.subscriberCount && !_hide?.import" [disabled]="_disabled?.import ?? false" class="btn btn-sm btn-outline-info" [ngClass]="getDisplayClasses()" (click)="onImport($event)">
           <i class="fa fa-file-import" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Import</span>
         </button>
