@@ -187,11 +187,14 @@ export abstract class EntityEffect<TModel, THttpServiceExtension extends IHttpSe
         this.httpService.delete(id).pipe(
           map(() => {
             console.log(`[${this.entityName}] Successfully deleted entity with id: ${id}`);
-            return { type: '[Noop] Delete Success' };
+            return this.actions.deleteSuccess({ id });
           }),
           catchError((error) => {
             this.logError('delete', { id }, error);
-            return EMPTY; // Or dispatch a delete failure action if needed
+            return of(this.actions.deleteFailure({
+              message: error?.error?.message || 'Delete failed',
+              errors: error?.error?.errors || null
+            }));
           })
         )
       ),

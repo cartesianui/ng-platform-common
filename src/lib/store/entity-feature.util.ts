@@ -85,13 +85,22 @@ export function entityFeature<T, TStateExtension extends Record<string, any> = {
     })),
     on(actions.updateMany, (state, { entities }) => adapter.updateMany(entities, state)),
 
-    on(actions.delete, (state, { id }) =>
+    on(actions.delete, (state) => ({
+      ...state,
+      delete: { ...requestStarted }
+    })),
+    on(actions.deleteSuccess, (state, { id }) =>
       adapter.removeOne(id, {
         ...state,
         selected: (state.selected as any)?.id === id ? null : state.selected,
-        meta: updateMetaState(state.meta, 'delete')
+        meta: updateMetaState(state.meta, 'delete'),
+        delete: { ...requestCompleted }
       })
     ),
+    on(actions.deleteFailure, (state) => ({
+      ...state,
+      delete: { ...requestFailed }
+    })),
     on(actions.deleteMany, (state, { ids }) => adapter.removeMany(ids, state)),
 
     on(actions.getAll, (state) => ({

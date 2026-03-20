@@ -31,6 +31,8 @@ export function entityActions<TModel, TName extends string>(entityName: TName) {
       'Create Failure': props<{ errors: IError; message: string }>(),
       'Update Success': props<{ entity: TModel }>(),
       'Update Failure': props<{ errors: IError; message: string }>(),
+      'Delete Success': props<{ id: string }>(),
+      'Delete Failure': props<{ errors: IError; message: string }>(),
       'Get Failure': props<{ errors: IError; message: string }>(),
 
       // Clear specific request states

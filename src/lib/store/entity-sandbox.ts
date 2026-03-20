@@ -65,7 +65,10 @@ export class EntitySandbox<T> extends Sandbox {
       map((entities: any[]) => entities.map((e) => new model(e)))
     );
     this.meta$ = this.store.pipe(select(selectors.meta));
-    this.selected$ = this.store.pipe(select(selectors.selected));
+    this.selected$ = this.store.pipe(
+      select(selectors.selected),
+      map((entity: any) => entity && !(entity instanceof model) ? new model(entity) : entity)
+    );
     this.requestState$ = this.store.pipe(select(selectors.request));
     this.createState$ = this.store.pipe(select(selectors.create));
     this.updateState$ = this.store.pipe(select(selectors.update));
