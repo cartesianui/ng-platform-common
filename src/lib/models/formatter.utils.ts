@@ -66,9 +66,14 @@ export function formatMultiline(
   const groupSep = formatter.groupSeparator ?? '|';
   const groupSepHtml = ` <span class="text-muted mx-1">${groupSep}</span> `;
 
+  // Separate image items from text items
+  const flatItems = formatter.items as FormatterOptions[];
+  const imageItem = flatItems.find(i => !Array.isArray(i) && i.type === 'image');
+  const textItems = flatItems.filter(i => i !== imageItem);
+
   const lines: string[] = [];
 
-  for (const item of formatter.items) {
+  for (const item of textItems) {
     try {
       // Grouped items: array of FormatterOptions rendered on same line
       if (Array.isArray(item)) {
@@ -90,7 +95,7 @@ export function formatMultiline(
         }
       }
     } catch (error) {
-      const key = Array.isArray(item) ? item.map(i => i.key).join(',') : item.key;
+      const key = Array.isArray(item) ? item.map(i => i.key).join(',') : (item as FormatterOptions).key;
       console.error(`[formatter.formatMultiline] Error processing item key="${key}"`, {
         item,
         error
@@ -98,7 +103,20 @@ export function formatMultiline(
     }
   }
 
-  return lines.join(separatorHtml);
+  const textHtml = lines.join(separatorHtml);
+
+  // If there's an image item, render as flexbox: image left, text right
+  if (imageItem && imageItem.key) {
+    const imageValue = model.getValue(imageItem.key);
+    const imageFn = FormatterRegistry.get('image');
+    const imageHtml = imageFn ? imageFn('dt', imageValue, imageItem, model) : '';
+
+    if (imageHtml) {
+      return `<div class="d-flex align-items-center gap-2">${imageHtml}<div>${textHtml}</div></div>`;
+    }
+  }
+
+  return textHtml;
 }
 
 /**
@@ -263,4 +281,26 @@ FormatterRegistry.register('func', (_target, value, formatter, model) => {
 
 FormatterRegistry.register('multiline', (_target, _value, formatter, model) => {
   return formatMultiline(formatter, model);
+});
+
+/**
+ * Image formatter — renders an <img> tag in datatable columns.
+ *
+ * Usage in model meta:
+ *   { key: 'coverImageUrl', label: '', opt: { width: '50', formatter: { type: 'image' } } }
+ *   { key: 'thumbnailUrl', label: '', opt: { width: '50', formatter: { type: 'image', displayAs: 'badge' } } }
+ *
+ * Options:
+ *   class: CSS size in px (default: '32')
+ *   displayAs: 'badge' for circular, anything else for rounded square
+ */
+FormatterRegistry.register('image', (_target, value, formatter) => {
+  const size = formatter?.class ?? '28';
+  const shape = formatter?.displayAs === 'badge' ? 'rounded-circle' : 'rounded';
+
+  if (!value) {
+    return `<span class="dt-cell-img-placeholder dt-cell-img-${size} ${shape}"><i class="fa fa-image"></i></span>`;
+  }
+
+  return `<img src="${value}" alt="" width="${size}" height="${size}" class="dt-cell-img ${shape}" loading="lazy" />`;
 });
