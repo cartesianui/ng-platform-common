@@ -22,6 +22,7 @@ form/
     selectable-control.component.ts # Searchable dropdown (local + remote)
     choosable-control.component.ts  # Radio/checkbox grid
     upload-control.component.ts     # File upload with drag-drop
+    language-control.component.ts   # Language selector (dropdown + pills modes)
   repeatable/
     repeatable.directive.ts         # Marker directive for repeatable items
     repeatable-form-base.component.ts    # Base class for individual item forms
@@ -304,6 +305,111 @@ Searchable dropdown with support for local and remote data sources.
 | `valueChange` | Emits selected value(s) |
 | `entityChange` | Emits full selected object(s) |
 | `freeTextChange` | Emits custom text (when `allowFreeText`) |
+
+### LanguageSelectComponent
+
+Language selection control with dropdown and pills modes.
+
+```html
+<!-- Dropdown: single select -->
+<language-control formControlName="language" display="flag+name" placeholder="Select language..."></language-control>
+
+<!-- Dropdown: multi-select with badge chips -->
+<language-control formControlName="languages" [multi]="true" display="flag+name" placeholder="Add languages..."></language-control>
+
+<!-- Pills: horizontal selectable flags -->
+<language-control formControlName="language" mode="pills" pillDisplay="flag"></language-control>
+
+<!-- Pills: multi-select with flag+code -->
+<language-control formControlName="languages" mode="pills" pillDisplay="flag+code" [multi]="true"></language-control>
+
+<!-- Custom language list -->
+<language-control formControlName="language" [languages]="myLanguages" mode="pills" pillDisplay="flag+name"></language-control>
+```
+
+**Pre-selected values (edit forms):**
+
+```typescript
+// Single value — pass language code
+this.form = new FormGroup({
+  language: new FormControl('en'),           // pre-selects English
+  languages: new FormControl(['en', 'ur']),  // pre-selects English & Urdu
+});
+
+// Or patch later
+this.form.patchValue({ language: 'ur' });
+this.form.patchValue({ languages: ['en', 'ar', 'fr'] });
+```
+
+The control accepts language codes (`'en'`), language names (`'English'`), or full `Language` objects as values. It resolves them against the available languages list automatically.
+
+**Component setup:**
+
+```typescript
+import { LanguageSelectComponent } from '@cartesianui/common';
+
+@Component({
+  imports: [LanguageSelectComponent, ...],
+  // ...
+})
+export class MyComponent {
+  form = new FormGroup({
+    language: new FormControl('en'),
+    languages: new FormControl([]),
+  });
+}
+```
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `languages` | `Language[]` | `DEFAULT_LANGUAGES` (36 languages) | Available languages |
+| `display` | `LanguageDisplay` | `'flag+name'` | Display format for dropdown mode |
+| `mode` | `'dropdown' \| 'pills'` | `'dropdown'` | Rendering mode |
+| `pillDisplay` | `'flag' \| 'code' \| 'flag+code' \| 'flag+name'` | `'flag'` | Display format for pills mode |
+| `multi` | `boolean` | `false` | Allow multiple selections |
+| `placeholder` | `string` | `'Select language...'` | Placeholder (dropdown mode) |
+| `returnField` | `'code' \| 'name' \| 'object'` | `'code'` | What value to emit |
+
+| Output | Description |
+|--------|-------------|
+| `valueChange` | Emits selected value(s) |
+
+**Return values by `returnField`:**
+- `'code'` → `'en'` or `['en', 'ur']`
+- `'name'` → `'English'` or `['English', 'Urdu']`
+- `'object'` → full `Language` object(s)
+
+**Language interface:**
+```typescript
+interface Language {
+  code: string;        // ISO 639-1: 'en', 'ur', 'ar'
+  name: string;        // 'English', 'Urdu', 'Arabic'
+  nativeName: string;  // 'English', 'اردو', 'العربية'
+  flag: string;        // Emoji fallback: '🇺🇸', '🇵🇰', '🇸🇦'
+  countryCode: string; // ISO 3166-1-alpha-2: 'us', 'pk', 'sa' (used for flag-icons CSS)
+  direction?: 'ltr' | 'rtl';
+}
+```
+
+**Flag Icons Setup:**
+
+Flags render using the `flag-icons` npm package SVGs served as static assets (not bundled by esbuild to avoid duplicate SVG output errors).
+
+1. **angular.json** — Each app's `assets` array copies SVGs:
+   ```json
+   { "glob": "**/*", "input": "node_modules/flag-icons/flags", "output": "/flags" }
+   ```
+
+2. **`_flag-icons.scss`** — Custom SCSS in `platform/coreui/src/lib/scss/` with:
+   - Base `.fi` class (display, sizing, background properties)
+   - Only 35 country classes (`fi-us`, `fi-pk`, etc.) via `@each` loop
+   - References `/flags/4x3/{code}.svg` (served from static assets)
+
+3. **Imported** in `coreui/scss/styles.scss` via `@use "flag-icons"` — available to all apps.
+
+4. **To add a new country flag:** Add the country code to the `@each` list in `_flag-icons.scss` and add a corresponding entry in `DEFAULT_LANGUAGES`.
+
+Standalone component — import `LanguageSelectComponent` directly.
 
 ### FileUploaderComponent
 
