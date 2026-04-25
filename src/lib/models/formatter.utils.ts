@@ -61,23 +61,50 @@ export function formatMultiline(
     return '';
   }
 
+  const primary = renderMultilineItems(
+    formatter.items as (FormatterOptions | FormatterOptions[])[],
+    formatter,
+    model
+  );
+
+  if (primary) return primary;
+
+  if (formatter.fallbackItems && Array.isArray(formatter.fallbackItems)) {
+    return renderMultilineItems(
+      formatter.fallbackItems as (FormatterOptions | FormatterOptions[])[],
+      formatter,
+      model
+    );
+  }
+
+  return '';
+}
+
+/**
+ * Render one set of multiline items (either primary `items` or `fallbackItems`).
+ * Returns empty string when every item resolves to empty so the caller can fall through.
+ */
+function renderMultilineItems(
+  items: (FormatterOptions | FormatterOptions[])[],
+  formatter: FormatterOptions,
+  model: { getValue: (key: string) => any }
+): string {
   const separator = formatter.separator ?? 'br';
   const separatorHtml = separator === 'br' ? '<br>' : separator === 'space' ? ' ' : '';
-  const groupSep = formatter.groupSeparator ?? '|';
-  const groupSepHtml = ` <span class="text-muted mx-1">${groupSep}</span> `;
+  const groupSep = formatter.groupSeparator ?? '·';
+  const groupSepHtml = ` <span class="dt-group-sep">${groupSep}</span> `;
 
-  // Separate image items from text items
-  const flatItems = formatter.items as FormatterOptions[];
-  const imageItem = flatItems.find(i => !Array.isArray(i) && i.type === 'image');
-  const textItems = flatItems.filter(i => i !== imageItem);
+  const imageItem = items.find(i => !Array.isArray(i) && (i as FormatterOptions).type === 'image') as FormatterOptions | undefined;
+  const textItems = items.filter(i => i !== imageItem);
 
   const lines: string[] = [];
 
   for (const item of textItems) {
     try {
-      // Grouped items: array of FormatterOptions rendered on same line
       if (Array.isArray(item)) {
         const groupParts: string[] = [];
+        const hasBracket = item.some((i: FormatterOptions) => i.displayAs === 'bracket');
+        const thisGroupSep = hasBracket ? ' ' : groupSepHtml;
         for (const subItem of item) {
           const html = formatSingleItem(subItem, model);
           if (html) {
@@ -85,10 +112,9 @@ export function formatMultiline(
           }
         }
         if (groupParts.length > 0) {
-          lines.push(groupParts.join(groupSepHtml));
+          lines.push(groupParts.join(thisGroupSep));
         }
       } else {
-        // Single item: one field per line
         const html = formatSingleItem(item, model);
         if (html) {
           lines.push(html);
@@ -96,16 +122,19 @@ export function formatMultiline(
       }
     } catch (error) {
       const key = Array.isArray(item) ? item.map(i => i.key).join(',') : (item as FormatterOptions).key;
-      console.error(`[formatter.formatMultiline] Error processing item key="${key}"`, {
+      console.error(`[formatter.renderMultilineItems] Error processing item key="${key}"`, {
         item,
         error
       });
     }
   }
 
+  const hasImage = !!(imageItem?.key && model.getValue(imageItem.key));
+
+  if (lines.length === 0 && !hasImage) return '';
+
   const textHtml = lines.join(separatorHtml);
 
-  // If there's an image item, render as flexbox: image left, text right
   if (imageItem && imageItem.key) {
     const imageValue = model.getValue(imageItem.key);
     const imageFn = FormatterRegistry.get('image');
@@ -187,6 +216,7 @@ export function wrapWithDisplayStyle(value: any, formatter: FormatterOptions): s
 
   let displayValue: string;
   let badgeColor: BadgeColor = formatter.badgeColor ?? 'secondary';
+  let icon: string | undefined;
 
   // Check for valueMap (custom value mapping for enums, statuses, booleans, etc.)
   const stringValue = String(value);
@@ -199,6 +229,9 @@ export function wrapWithDisplayStyle(value: any, formatter: FormatterOptions): s
       if (mapped.color) {
         badgeColor = mapped.color;
       }
+      if (mapped.icon) {
+        icon = mapped.icon;
+      }
     }
   } else {
     displayValue = `${formatter.prefix ?? ''}${value}${formatter.suffix ?? ''}`;
@@ -207,15 +240,22 @@ export function wrapWithDisplayStyle(value: any, formatter: FormatterOptions): s
   const customClass = formatter.class ? ` ${formatter.class}` : '';
   const style = formatter.displayAs ?? 'text';
 
+  // Prepend icon for badge/tag styles only — other styles don't typically carry icons.
+  const iconHtml = icon && (style === 'badge' || style === 'tag')
+    ? `<i class="${icon} me-1"></i>`
+    : '';
+
   switch (style) {
     case 'muted':
       return `<small class="text-muted${customClass}">${displayValue}</small>`;
     case 'badge':
-      return `<span class="badge bg-${badgeColor}${customClass}">${displayValue}</span>`;
+      return `<span class="badge bg-${badgeColor}${customClass}">${iconHtml}${displayValue}</span>`;
     case 'tag':
-      return `<span class="badge rounded-pill bg-${badgeColor}${customClass}">${displayValue}</span>`;
+      return `<span class="badge rounded-pill bg-${badgeColor}${customClass}">${iconHtml}${displayValue}</span>`;
     case 'label':
       return `<strong class="${customClass}">${displayValue}</strong>`;
+    case 'bracket':
+      return `<small class="text-muted${customClass}">(${displayValue})</small>`;
     case 'text':
     default:
       return customClass ? `<span class="${customClass}">${displayValue}</span>` : displayValue;
@@ -286,13 +326,19 @@ FormatterRegistry.register('multiline', (_target, _value, formatter, model) => {
 /**
  * Image formatter — renders an <img> tag in datatable columns.
  *
+ * Wraps the thumbnail in a hover-trigger element so a larger preview
+ * floats over the row on hover (CSS-only; safe inside [innerHTML]).
+ *
  * Usage in model meta:
  *   { key: 'coverImageUrl', label: '', opt: { width: '50', formatter: { type: 'image' } } }
  *   { key: 'thumbnailUrl', label: '', opt: { width: '50', formatter: { type: 'image', displayAs: 'badge' } } }
  *
  * Options:
- *   class: CSS size in px (default: '32')
+ *   class: CSS size in px (default: '28')
  *   displayAs: 'badge' for circular, anything else for rounded square
+ *   previewSize: passport | avatar | small | medium | large | product (default: medium)
+ *                — preset for the hover preview panel.
+ *   preview: false to disable hover preview entirely (default: true).
  */
 FormatterRegistry.register('image', (_target, value, formatter) => {
   const size = formatter?.class ?? '28';
@@ -302,5 +348,15 @@ FormatterRegistry.register('image', (_target, value, formatter) => {
     return `<span class="dt-cell-img-placeholder dt-cell-img-${size} ${shape}"><i class="fa fa-image"></i></span>`;
   }
 
-  return `<img src="${value}" alt="" width="${size}" height="${size}" class="dt-cell-img ${shape}" loading="lazy" />`;
+  const previewEnabled = formatter?.preview !== false;
+  if (!previewEnabled) {
+    return `<img src="${value}" alt="" width="${size}" height="${size}" class="dt-cell-img ${shape}" loading="lazy" />`;
+  }
+
+  const previewSize = formatter?.previewSize ?? 'medium';
+
+  return `<span class="dt-cell-img-trigger dt-cell-img-preview-${previewSize}">`
+    + `<img src="${value}" alt="" width="${size}" height="${size}" class="dt-cell-img ${shape}" loading="lazy" />`
+    + `<span class="dt-cell-img-preview"><img src="${value}" alt="" loading="lazy" /></span>`
+    + `</span>`;
 });

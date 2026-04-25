@@ -1,0 +1,51 @@
+<div class="image-thumb-wrapper">
+  <button type="button"
+          class="image-thumb"
+          [ngStyle]="thumbStyle()"
+          [style.cursor]="thumbCursor()"
+          [disabled]="!canPreview()"
+          (click)="onThumbClick($event)"
+          (mouseenter)="onThumbHover(true)"
+          (mouseleave)="onThumbHover(false)">
+    @if (src) {
+      <img [src]="src" [alt]="alt" />
+      @if (canPreview() && previewMode !== 'none') {
+        <span class="image-thumb-magnifier"><i class="fa fa-search-plus"></i></span>
+      }
+    } @else if (showFallback) {
+      <span class="image-thumb-placeholder"><i class="fa fa-image"></i></span>
+    }
+  </button>
+
+  @if (previewMode === 'overlay' && inlineOpen() && src) {
+    <div class="image-thumb-overlay-preview"
+         (click)="$event.stopPropagation()"
+         (mouseenter)="onThumbHover(true)"
+         (mouseleave)="onThumbHover(false)">
+      <img [src]="src" [alt]="alt" [ngStyle]="previewStyle()" />
+    </div>
+  }
+</div>
+
+@if (previewMode === 'inline' && inlineOpen() && src) {
+  <div class="image-thumb-inline-preview"
+       (click)="$event.stopPropagation()"
+       (mouseenter)="onThumbHover(true)"
+       (mouseleave)="onThumbHover(false)">
+    <img [src]="src" [alt]="alt" [ngStyle]="previewStyle()" />
+  </div>
+}
+
+@if (lightboxOpen() && src) {
+  <div class="image-thumb-lightbox"
+       role="dialog"
+       aria-modal="true"
+       (click)="closeLightbox($event)"
+       (keydown.escape)="closeLightbox($event)"
+       tabindex="0">
+    <button type="button" class="image-thumb-lightbox-close" title="Close" (click)="closeLightbox($event)">
+      <i class="fa fa-times"></i>
+    </button>
+    <img [src]="src" [alt]="alt" (click)="$event.stopPropagation()" />
+  </div>
+}

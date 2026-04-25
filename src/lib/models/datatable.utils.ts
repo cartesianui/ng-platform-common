@@ -19,6 +19,10 @@ export function formatForDataTable(
         return formatter?.func?.(value, model);
       } else if (formatter.type === 'pattern') {
         return evalPattern(formatter.pattern!);
+      } else if (formatter.type === 'multiline') {
+        // multiline resolves each item's key independently and may render
+        // fallbackItems when the column's primary key is null — run unconditionally.
+        return formatValue('dt', value, formatter, model);
       } else {
         if (value !== undefined && value !== null) {
           return formatValue('dt', value, formatter, model);

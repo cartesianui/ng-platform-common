@@ -10,14 +10,15 @@ export type FormatterType = BuiltInFormatterType | (string & {});
 export type BadgeColor = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'dark' | 'light';
 
 // Display style options for cell values (default: 'text')
-export type DisplayStyle = 'text' | 'badge' | 'tag' | 'label' | 'muted';
+export type DisplayStyle = 'text' | 'badge' | 'tag' | 'label' | 'muted' | 'bracket';
 
 // Custom value mapping configuration
-// Maps raw values to display labels and optional colors
-// Example: { 'pending': { label: 'Pending', color: 'warning' }, 'approved': { label: 'Approved', color: 'success' } }
+// Maps raw values to display labels, optional colors, and optional icons
+// Example: { 'pending': { label: 'Pending', color: 'warning', icon: 'fa-clock' } }
 export type ValueMapItem = {
   label: string;        // Display label for this value
   color?: BadgeColor;   // Optional badge color (used with badge/tag displayAs)
+  icon?: string;        // Optional icon class (e.g. 'fa-check') prepended to the label
 };
 
 export type ValueMap = {
@@ -45,8 +46,14 @@ export type FormatterOptions = {
   // Multiline formatter options (type: 'multiline')
   // Each item can be a single FormatterOptions or an array of FormatterOptions (grouped on same line)
   items?: (FormatterOptions | FormatterOptions[])[];
+  // Rendered only when every `items[].key` resolves to empty/null on the row.
+  // Used for conditional cells (e.g. registered customer vs walk-in name/phone).
+  fallbackItems?: (FormatterOptions | FormatterOptions[])[];
   separator?: 'br' | 'space' | 'none';  // How to separate lines (default: 'br')
   groupSeparator?: string;  // Separator between grouped items on same line (default: '|')
+  // Image-formatter-only options (type: 'image')
+  preview?: boolean;        // Enable hover preview (default: true)
+  previewSize?: 'xs' | 'passport' | 'avatar' | 'small' | 'medium' | 'large' | 'product';  // Preview preset (default: 'medium')
 }
 
 export type FieldDescriptor = {
