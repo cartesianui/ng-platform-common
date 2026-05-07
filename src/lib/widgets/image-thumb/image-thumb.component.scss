@@ -8,16 +8,16 @@
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
-  background-color: var(--bs-tertiary-bg, #f1f3f5);
+  background-color: var(--cui-tertiary-bg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--bs-border-color, #dee2e6);
+  border: 1px solid var(--cui-border-color);
   padding: 0;
   transition: border-color 120ms ease;
 
   &:not(:disabled):hover {
-    border-color: var(--bs-primary, #0d6efd);
+    border-color: var(--cui-primary);
 
     .image-thumb-magnifier {
       opacity: 1;
@@ -37,7 +37,7 @@
 }
 
 .image-thumb-placeholder {
-  color: var(--bs-secondary, #6c757d);
+  color: var(--cui-secondary-color);
   font-size: 1rem;
 }
 
@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.45);
-  color: #fff;
+  color: var(--cui-white);
   opacity: 0;
   transition: opacity 120ms ease;
   pointer-events: none;
@@ -63,8 +63,8 @@
   z-index: 1070;
   padding: 8px;
   border-radius: 0.375rem;
-  background-color: var(--bs-body-bg, #fff);
-  border: 1px solid var(--bs-border-color, #dee2e6);
+  background-color: var(--cui-body-bg);
+  border: 1px solid var(--cui-border-color);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
@@ -82,11 +82,11 @@
   }
   &::before {
     right: 100%;
-    border-right-color: var(--bs-border-color, #dee2e6);
+    border-right-color: var(--cui-border-color);
   }
   &::after {
     right: calc(100% - 1px);
-    border-right-color: var(--bs-body-bg, #fff);
+    border-right-color: var(--cui-body-bg);
   }
 
   img {
@@ -105,8 +105,8 @@
   margin-top: 8px;
   padding: 12px;
   border-radius: 0.375rem;
-  background-color: var(--bs-tertiary-bg, #f8f9fa);
-  border: 1px solid var(--bs-border-color, #dee2e6);
+  background-color: var(--cui-tertiary-bg);
+  border: 1px solid var(--cui-border-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -135,7 +135,7 @@
     object-fit: contain;
     cursor: default;
     box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
-    background: #fff;
+    background: var(--cui-white);
   }
 }
 
@@ -148,7 +148,7 @@
   border-radius: 50%;
   border: none;
   background-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: var(--cui-white);
   font-size: 1.1rem;
   cursor: pointer;
   display: flex;

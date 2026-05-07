@@ -37,6 +37,7 @@ import {
   Observer,
   Subscription,
   asapScheduler,
+  forkJoin,
   map,
   observeOn,
   of,
@@ -162,6 +163,12 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   multi = input(false);
   optionKey = input<string>('id');
   optionField = input('name');
+  // Relations to load on the lookup endpoint (Apiato `include=` param).
+  // Accepts CSV string or string[]. Sent on both list and by-id requests.
+  include = input<string | string[] | null>(null);
+  // Extra columns to surface in each lookup row, on top of `optionKey`/`optionField`.
+  // Accepts CSV string or string[]. Pair with `include` for relation columns.
+  lookupFields = input<string | string[] | null>(null);
   placeholder = input('Search...');
   readonly = input(false);
   allowFreeText = input(false);
@@ -270,15 +277,16 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             const key = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
               ? ObjectUtils.convertKey(this.optionKey(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
               : this.optionKey();
+            const params: Record<string, string> = {
+              search: `${field}:${query}`,
+              searchFields: `${field}:like`,
+              output: 'lookup',
+              lookup: this.buildLookupParam(key, field)
+            };
+            const includeParam = this.csv(this.include());
+            if (includeParam) params['include'] = includeParam;
             return this.http
-              .get<any>(`${AppConfig.remoteServiceBaseUrl}${urlValue}`, {
-                params: {
-                  search: `${field}:${query}`,
-                  searchFields: `${field}:like`,
-                  output: 'lookup',
-                  lookup: `${key},${field}`
-                }
-              })
+              .get<any>(`${AppConfig.remoteServiceBaseUrl}${urlValue}`, { params })
               .pipe(
                 map((res) => {
                   // check response keys conversion settings
@@ -294,18 +302,17 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                     setTimeout(() => {
                       this.items.set(items ?? []);
                       if (this.pendingRawValue != null) {
-                        // Resolve pending once we have items/options
+                        // Resolve pending once we have items/options (edit prefill)
                         this.setResolvedValue(this.pendingRawValue);
                         this.pendingRawValue = null;
-                      } else {
-                        // Ensure selected is in sync with value (if value present)
-                        if (this.value() != null) {
-                          // attempt to refresh selected from available items/options
-                          // setResolvedValue will derive selected from value
-                          this.setResolvedValue(this.value());
-                        }
-                        this.cdr.markForCheck();
                       }
+                      // NOTE: Do NOT call setResolvedValue(this.value()) here.
+                      // `items` is the live search-result list driven by the
+                      // user's current keystroke; resolving the existing value
+                      // against it almost always misses, and the single-select
+                      // branch then clears `searchControl` — wiping the text
+                      // the user is actively typing.
+                      this.cdr.markForCheck();
                     }, 0);
                   },
                   error: () => {
@@ -353,6 +360,90 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     );
   }
 
+  /**
+   * Build a "fetch by id" URL while preserving any query string already on
+   * the configured URL (e.g. `/employees?roles=ehr-opd-nurse` → `/employees/{id}?roles=ehr-opd-nurse`).
+   * Appends `include=` from the [include] input if one is set and the URL
+   * doesn't already carry an include param.
+   */
+  private buildByIdUrl(url: string, id: any): string {
+    const queryIdx = url.indexOf('?');
+    const base = queryIdx >= 0 ? url.slice(0, queryIdx) : url;
+    let query = queryIdx >= 0 ? url.slice(queryIdx) : '';
+
+    const includeParam = this.csv(this.include());
+    if (includeParam && !/[?&]include=/.test(query)) {
+      query += (query ? '&' : '?') + 'include=' + encodeURIComponent(includeParam);
+    }
+
+    return `${AppConfig.remoteServiceBaseUrl}${base}/${id}${query}`;
+  }
+
+  /** Coerce CSV string | string[] | null to a deduped CSV string (empty → ''). */
+  private csv(value: string | string[] | null | undefined): string {
+    if (!value) return '';
+    const parts = Array.isArray(value) ? value : value.split(',');
+    const cleaned = parts.map((p) => p.trim()).filter((p) => p.length > 0);
+    return Array.from(new Set(cleaned)).join(',');
+  }
+
+  /** Compose the `lookup=` param: optionKey + optionField + any [lookupFields]. */
+  private buildLookupParam(key: string, field: string): string {
+    const extras = this.csv(this.lookupFields());
+    const base = `${key},${field}`;
+    return extras ? `${base},${extras}` : base;
+  }
+
+  // Fetch multiple items by ids in parallel (used for multi-select edit
+  // prefill, where the form value is an id[] but the picker has no items
+  // pre-loaded). Mirrors `getItemById` but merges results into `items()` and
+  // resolves the pending array as a whole once all responses come back.
+  private getItemsByIds(ids: any[]): void {
+    const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
+    if (!url) return;
+
+    const requests = ids.map((id) =>
+      this.http.get<any>(this.buildByIdUrl(url, id))
+    );
+
+    this.subs.add(
+      forkJoin(requests).subscribe({
+        next: (responses) => {
+          const fetched = responses
+            .map((res: any) => {
+              let item = res?.data || res;
+              if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
+                item = ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
+              }
+              return item;
+            })
+            .filter((it) => !!it);
+
+          if (!fetched.length) return;
+
+          setTimeout(() => {
+            // Merge with anything already in items (e.g. options pre-loaded).
+            const existing = this.items() ?? [];
+            const merged = [...existing];
+            for (const it of fetched) {
+              const key = this.optionKey() as string;
+              if (!merged.some((m: any) => m?.[key] === (it as any)?.[key])) {
+                merged.push(it);
+              }
+            }
+            this.items.set(merged);
+            this.setResolvedValue(ids);
+            this.pendingRawValue = null;
+            this.cdr.markForCheck();
+          }, 0);
+        },
+        error: () => {
+          this.cdr.markForCheck();
+        }
+      })
+    );
+  }
+
   // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
   private getItemById(id: any): void {
     // Prevent duplicate fetches for the same ID
@@ -365,7 +456,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
     this.subs.add(
       this.http
-        .get<any>(`${AppConfig.remoteServiceBaseUrl}${url}/${id}`)
+        .get<any>(this.buildByIdUrl(url!, id))
         .subscribe({
           next: (res) => {
             // Handle wrapped response (e.g., { data: {...} })
@@ -655,6 +746,9 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
       if (url && value != null && (isUuid(value) || isValidInteger(value))) {
         this.getItemById(value);
+      } else if (url && Array.isArray(value) && value.length > 0 && value.every((v) => isUuid(v) || isValidInteger(v))) {
+        // Multi-select edit-prefill: fetch each id so badges resolve.
+        this.getItemsByIds(value);
       }
     } else {
       this.setResolvedValue(value);

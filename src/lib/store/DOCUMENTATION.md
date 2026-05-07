@@ -809,4 +809,4 @@ export class DrawerSandbox extends Sandbox {
 | pos/cart | `fetchMyCartsRequest` | Track "my carts" fetch independently from "all carts" |
 | pos/drawer | `currentDrawer`, `currentDrawerRequest` | Active drawer separate from list of all drawers |
 | care/visit | `getOpenVisitsRequest` | Track "open visits for doctor" fetch state |
-| care/queue | `assignedToMeRequest`, `entitiesAssignedToMe` | Separate "my queue" from "all queue", with role-based selectors |
+| care/queue (queue-entry-assignment) | `myAssignmentsRequest` | Track the staff member's "my assignments" fetch independently from any future "all assignments" admin view |

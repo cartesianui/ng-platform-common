@@ -1,0 +1,4 @@
+<div *ngIf="entry() as e" class="alert alert-{{ e.tone }} d-flex align-items-start gap-2 py-2 px-3 mb-0" role="status">
+  <i class="fa {{ icon() }} mt-1"></i>
+  <div class="small">{{ e.text }}</div>
+</div>

@@ -93,6 +93,18 @@ export type SearchFieldDescriptor = {
   placeholder?: string;
   hidden?: boolean;         // Include in criteria but don't show in UI
   width?: string;           // CSS col width hint (e.g. '2' for col-2, '3' for col-3)
+  /**
+   * Default value applied on init when the field has no hydrated value (URL/state).
+   * - For `type: 'date'`: literal `Date | string` (ISO `YYYY-MM-DD`) OR a sentinel
+   *   `'today' | 'yesterday' | 'tomorrow'` resolved at init time.
+   * - For `type: 'daterange'`: literal `[Date|string, Date|string]` OR sentinel
+   *   `'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth'`.
+   * - For other types: literal value to seed the control.
+   * The default is applied as a real filter, not a placeholder — first render
+   * fires the corresponding `criteria.where` so the listing shows the
+   * defaulted slice immediately.
+   */
+  defaultValue?: any;
 };
 
 // Input type for EntityMeta search: accepts shorthand strings, full descriptors, or legacy format

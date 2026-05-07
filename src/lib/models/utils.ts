@@ -134,3 +134,25 @@ export class FieldMetaBuilder {
     return Reflect.getMetadata(SEARCH_FIELDS_KEY, ctor) ?? [];
   }
 }
+
+/**
+ * Project an object to just the keys declared in its `@EntityMeta({ form: [...] })`.
+ *
+ * Useful when sending an entity (often a fully-hydrated, transformer-loaded one
+ * with nested relations) back to the API as part of an update payload — the
+ * server only wants the form-shaped fields, not the full tree.
+ *
+ * Example:
+ *   updatedEntity.items = (this.items ?? []).map(i => pickFormFields(i, ReceiveNoteItem));
+ *
+ * Unknown keys are dropped. Undefined values are dropped.
+ */
+export function pickFormFields<T extends object>(entity: T, ctor: any): Partial<T> {
+  const keys = FieldMetaBuilder.buildForm(ctor).map(f => f.key);
+  const out: any = {};
+  for (const k of keys) {
+    const v = (entity as any)[k];
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}

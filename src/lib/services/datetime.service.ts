@@ -186,6 +186,60 @@ export class DatetimeService {
     return DateTime.now().plus({ days });
   }
 
+  // ─── Calendar-relative helpers (used by search defaults, schedulers etc.) ──
+  // All return a `DateTime` at start-of-day in the configured zone.
+
+  static today(): DateTime {
+    return DateTime.now().startOf('day');
+  }
+
+  static yesterday(): DateTime {
+    return DatetimeService.today().minus({ days: 1 });
+  }
+
+  static tomorrow(): DateTime {
+    return DatetimeService.today().plus({ days: 1 });
+  }
+
+  /** Sunday-anchored week (matches the search-panel sentinel semantics). */
+  static startOfThisWeek(): DateTime {
+    const t = DatetimeService.today();
+    return t.minus({ days: t.weekday % 7 }); // luxon weekday: 1..7 (Mon..Sun) → 0..6 with Sun=0
+  }
+
+  static endOfThisWeek(): DateTime {
+    return DatetimeService.startOfThisWeek().plus({ days: 6 });
+  }
+
+  static startOfLastWeek(): DateTime {
+    return DatetimeService.startOfThisWeek().minus({ weeks: 1 });
+  }
+
+  static endOfLastWeek(): DateTime {
+    return DatetimeService.startOfThisWeek().minus({ days: 1 });
+  }
+
+  static startOfThisMonth(): DateTime {
+    return DatetimeService.today().startOf('month');
+  }
+
+  static endOfThisMonth(): DateTime {
+    return DatetimeService.today().endOf('month').startOf('day');
+  }
+
+  static startOfLastMonth(): DateTime {
+    return DatetimeService.startOfThisMonth().minus({ months: 1 });
+  }
+
+  static endOfLastMonth(): DateTime {
+    return DatetimeService.startOfThisMonth().minus({ days: 1 });
+  }
+
+  /** ISO date `YYYY-MM-DD`, no time. */
+  static toIsoDate(dt: DateTime): string {
+    return dt.toISODate() ?? '';
+  }
+
   static format(dt: DateTime, format?: DateFormat): DateTime | string {
     if (!format) return dt;
 

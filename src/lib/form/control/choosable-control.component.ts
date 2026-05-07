@@ -41,9 +41,9 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
     }
   ],
   template: `
-   <div class="choosable-control">
+   <div class="choosable-control" [class.cc--mode-buttons]="mode() === 'buttons'">
       <div class="form-control p-2">
-        <div *ngIf="items()?.length; else noOptions" 
+        <div *ngIf="items()?.length; else noOptions"
              class="checkbox-grid"
              [ngStyle]="{'grid-template-columns': 'repeat(' + cols() + ', 1fr)'}">
           <label
@@ -86,6 +86,13 @@ export class ChoosableControlComponent<T = any>
   cols = input<number>(1);
   optionKey = input<string>('id');
   optionField = input('name');
+  /**
+   * Visual rendering mode.
+   *  - 'default' (radio button + label, original look)
+   *  - 'buttons' (segmented track; active option highlighted)
+   * Variants are visual only — value-binding behaviour is identical.
+   */
+  mode = input<'default' | 'buttons'>('default');
 
   // --- Two-way bound model ---
   value = model<T[keyof T][] | T[keyof T] | null>(null);

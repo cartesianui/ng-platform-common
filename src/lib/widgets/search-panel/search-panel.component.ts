@@ -277,7 +277,8 @@ export class SearchPanelComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Hydrate from existing criteria wheres (e.g. from URL)
+    // Hydrate from existing criteria wheres (e.g. URL state, defaults seeded
+    // by the listing's `applyFieldDefaults` before its first list() fired).
     this.hydrateFromCriteria();
   }
 

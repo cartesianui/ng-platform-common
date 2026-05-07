@@ -106,6 +106,14 @@ export interface EnumMetaApi<V extends string | number> {
   getColor(value: V | undefined): BadgeColor | '';
   getIcon(value: V | undefined): string;
 
+  /** Bootstrap utility-class accessors derived from `getColor()`. Use these so a
+   *  component's dot / pill / accent bar / text shade all read color from the same
+   *  source (the meta) — no hex literals, no per-component switch statements.
+   *  Returns '' when no color is configured for the value (caller decides fallback). */
+  getBgClass(value: V | undefined): string;
+  getTextClass(value: V | undefined): string;
+  getBadgeClass(value: V | undefined): string;
+
   /** `{ name, value }[]` for `<choosable-control>`, `<selectable-control>`, and
    *  `@EntityMeta({ search: [{ type: 'select', options: ... }] })`. Uses the display's
    *  own labels (not `toLabel`), so the form/search labels match everything else. */
@@ -195,10 +203,19 @@ function buildMetaApi<V extends string | number>(
   ) as Record<V, ValueMapItem>;
   const options: EnumOption<V>[] = values.map(v => ({ name: labels[v], value: v }));
 
+  const colorOf = (v: V | undefined): BadgeColor | '' =>
+    v === undefined ? defaultColor : (colors?.[v] ?? defaultColor);
+
   return {
     getLabel: (v) => v === undefined ? defaultLabel : (labels[v] ?? defaultLabel),
-    getColor: (v) => v === undefined ? defaultColor : (colors?.[v] ?? defaultColor),
+    getColor: colorOf,
     getIcon:  (v) => v === undefined ? defaultIcon  : (icons?.[v]  ?? defaultIcon),
+    getBgClass:    (v) => { const c = colorOf(v); return c ? `bg-${c}` : ''; },
+    getTextClass:  (v) => { const c = colorOf(v); return c ? `text-${c}` : ''; },
+    getBadgeClass: (v) => {
+      const c = colorOf(v);
+      return c ? `bg-${c}-subtle text-${c} border border-${c} border-opacity-25` : '';
+    },
     getOptions:  () => options,
     getLabelMap: () => labelMap,
     getValueMap: () => valueMap,

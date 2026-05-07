@@ -1,7 +1,9 @@
 import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect, ChangeDetectorRef, untracked } from '@angular/core';
 import { ElementRef, ViewChild, runInInjectionContext, DestroyRef } from '@angular/core';
 import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
+import { DateTime } from 'luxon';
 import { ExportService, ExportFormat } from '../services/export.service';
+import { DatetimeService } from '../services/datetime.service';
 import { SearchFieldDescriptor } from '../models/types';
 import { BaseComponent } from '../base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
@@ -104,6 +106,11 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
       this.criteria.hydrateFromUrl(params);
     }
 
+    // Apply field-level defaults before the listing effect registers, so the
+    // first list() call already includes them — avoids a double request from
+    // a post-init mutation. URL state wins; defaults only fill gaps.
+    this.applyFieldDefaults(params);
+
     runInInjectionContext(this.injector, () => {
       effect(() => {
         // Read queryString signal so Angular tracks it as a dependency
@@ -187,6 +194,77 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
    */
   onExport(endpoint: string, format: ExportFormat = 'csv', columns?: string[]): void {
     this.exportService.export(endpoint, this.criteria.httpParams(), format, columns);
+  }
+
+  /**
+   * Apply per-field `defaultValue` from `searchFields` to the criteria. Skips
+   * any field already populated by URL hydration so deep links override
+   * defaults. Runs synchronously; the listing's queryString-watching effect
+   * will pick up the mutated criteria as part of its initial read, so the
+   * defaulted slice arrives in a single GET.
+   *
+   * Date sentinels (`'today'` / `'thisWeek'` / etc.) resolve at call time.
+   */
+  private applyFieldDefaults(urlParams: Record<string, string>): void {
+    const hydratedColumns = this.collectHydratedColumns(urlParams);
+    for (const field of this.searchFields) {
+      if (field.defaultValue == null) continue;
+      if (hydratedColumns.has(field.key)) continue;
+
+      if (field.type === 'date') {
+        const dt = this.resolveDateSentinel(field.defaultValue);
+        if (!dt) continue;
+        this.criteria.where(field.key, field.operator || '=', DatetimeService.toIsoDate(dt));
+      } else if (field.type === 'daterange') {
+        const range = this.resolveDateRangeSentinel(field.defaultValue);
+        if (!range) continue;
+        this.criteria.whereBetween(field.key, [DatetimeService.toIsoDate(range[0]), DatetimeService.toIsoDate(range[1])]);
+      } else {
+        this.criteria.where(field.key, field.operator || '=', field.defaultValue);
+      }
+    }
+  }
+
+  private collectHydratedColumns(urlParams: Record<string, string>): Set<string> {
+    const cols = new Set<string>();
+    if (!urlParams['search']) return cols;
+    const wheres = (this.criteria as any)?.wheres?.() ?? [];
+    for (const w of wheres) cols.add(w.column);
+    return cols;
+  }
+
+  private resolveDateSentinel(input: any): DateTime | null {
+    if (input instanceof Date) return DatetimeService.fromJSDate(input).startOf('day');
+    if (typeof input === 'string') {
+      switch (input) {
+        case 'today':     return DatetimeService.today();
+        case 'yesterday': return DatetimeService.yesterday();
+        case 'tomorrow':  return DatetimeService.tomorrow();
+        default: {
+          const dt = DateTime.fromISO(input);
+          return dt.isValid ? dt.startOf('day') : null;
+        }
+      }
+    }
+    return null;
+  }
+
+  private resolveDateRangeSentinel(input: any): [DateTime, DateTime] | null {
+    if (Array.isArray(input) && input.length === 2) {
+      const start = this.resolveDateSentinel(input[0]);
+      const end   = this.resolveDateSentinel(input[1]);
+      if (start && end) return [start, end];
+      return null;
+    }
+    if (typeof input === 'string') {
+      switch (input) {
+        case 'thisWeek':  return [DatetimeService.startOfThisWeek(), DatetimeService.endOfThisWeek()];
+        case 'lastWeek':  return [DatetimeService.startOfLastWeek(), DatetimeService.endOfLastWeek()];
+        case 'thisMonth': return [DatetimeService.startOfThisMonth(), DatetimeService.endOfThisMonth()];
+        case 'lastMonth': return [DatetimeService.startOfLastMonth(), DatetimeService.endOfLastMonth()];
+      }
+    }
+    return null;
   }
 
   protected abstract list(): void;

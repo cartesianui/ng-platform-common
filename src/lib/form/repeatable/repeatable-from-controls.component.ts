@@ -3,26 +3,29 @@ import { RepeatableDirective } from './repeatable.directive';
 
 @Component({
     selector: 'repeatable-form',
+    styleUrls: ['./repeatable-from-controls.component.scss'],
     template: `
-    <div class="mb-3 d-flex justify-content-end">
-      <button type="button" class="btn btn-primary btn-sm" (click)="add()">
-        <i class="fa fa-plus"></i>
-      </button>
-    </div>
-    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="row mb-2 align-items-stretch">
+    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="repeatable-row row mb-2 align-items-stretch">
       <div class="col">
         <ng-container *ngTemplateOutlet="template; context: getContext(item, i)"></ng-container>
       </div>
 
-      <div class="col-auto d-flex flex-column justify-content-center gap-2">
-        <button *ngIf="showSaveButton" type="button" class="btn btn-success btn-sm" (click)="save(i)" title="Save">
+      <div class="repeatable-row__actions col-auto d-flex flex-column justify-content-center gap-2">
+        <button *ngIf="showSaveButton" type="button" class="btn btn-success btn-sm repeatable-row__save" (click)="save(i)" title="Save">
           <i class="fa fa-save"></i>
         </button>
 
-        <button type="button" class="btn btn-danger btn-sm" (click)="remove(i)" title="Remove">
+        <button type="button" class="btn btn-danger btn-sm repeatable-row__remove" (click)="remove(i)" title="Remove">
           <i class="fa fa-trash"></i>
         </button>
       </div>
+    </div>
+
+    <div class="repeatable-add">
+      <button type="button" class="btn repeatable-add__btn" (click)="add()">
+        <i class="fa fa-plus"></i>
+        <span *ngIf="addLabel" class="repeatable-add__label">{{ addLabel }}</span>
+      </button>
     </div>
 
     <ng-content></ng-content>
@@ -34,6 +37,9 @@ export class RepeatableFormControlsComponent<TDataModel> {
   @Input() data: TDataModel[] = [];
 
   @Input() showSaveButton: boolean = false;
+
+  /** Optional label for the add button (e.g. "Add item"). Empty = icon only. */
+  @Input() addLabel: string = '';
 
   @Output() dataChange = new EventEmitter<TDataModel[]>();
 
