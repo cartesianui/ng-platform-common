@@ -235,6 +235,26 @@ export class DatetimeService {
     return DatetimeService.startOfThisMonth().minus({ days: 1 });
   }
 
+  /**
+   * Resolve a date sentinel string to a DateTime at start-of-day. Single
+   * source of truth for the sentinel vocabulary shared across form-default
+   * values and listing search panels — adding a new sentinel here makes it
+   * available everywhere.
+   *
+   * Recognized sentinels: `'today'`, `'yesterday'`, `'tomorrow'`.
+   * Returns null for any other input (including ISO strings, Date instances,
+   * non-strings) — callers handle those cases on their own.
+   */
+  static resolveSentinel(input: any): DateTime | null {
+    if (typeof input !== 'string') return null;
+    switch (input) {
+      case 'today':     return DatetimeService.today();
+      case 'yesterday': return DatetimeService.yesterday();
+      case 'tomorrow':  return DatetimeService.tomorrow();
+      default:          return null;
+    }
+  }
+
   /** ISO date `YYYY-MM-DD`, no time. */
   static toIsoDate(dt: DateTime): string {
     return dt.toISODate() ?? '';
