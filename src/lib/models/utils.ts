@@ -145,14 +145,64 @@ export class FieldMetaBuilder {
  * Example:
  *   updatedEntity.items = (this.items ?? []).map(i => pickFormFields(i, ReceiveNoteItem));
  *
- * Unknown keys are dropped. Undefined values are dropped.
+ * Unknown keys are dropped. Undefined values are dropped. Empty strings are
+ * coerced to null — an optional FK control that was never filled ships `""`
+ * from Angular, which then violates FK constraints on insert. `null` is the
+ * right wire shape for "no value."
  */
 export function pickFormFields<T extends object>(entity: T, ctor: any): Partial<T> {
   const keys = FieldMetaBuilder.buildForm(ctor).map(f => f.key);
   const out: any = {};
   for (const k of keys) {
     const v = (entity as any)[k];
-    if (v !== undefined) out[k] = v;
+    if (v === undefined) continue;
+    out[k] = v === '' ? null : v;
   }
   return out;
+}
+
+/**
+ * Walk an entity's own enumerable properties and project any nested model
+ * instance (or array of instances) through `pickFormFields`, using the
+ * instance's own constructor as the projection schema.
+ *
+ * "Is a model" is detected by checking whether the value's constructor has
+ * `@EntityMeta({ form: [...] })` declared. Plain POJOs, primitives, dates,
+ * and arrays of POJOs are passed through unchanged.
+ *
+ * Mutates and returns the same entity reference.
+ *
+ * Why: parent-doc edit/create pages used to call this manually for items
+ * arrays (`entity.items = items.map(i => pickFormFields(i, ItemCtor))`).
+ * That boilerplate was per-page, easy to forget, and mismatched with the
+ * `getEntityFromForm` contract which already projects the parent. By doing
+ * the recursive project here, parent forms with nested model arrays/objects
+ * (items, lines, charges, attachments — any name) ship a clean payload
+ * without the page knowing the child constructors.
+ */
+export function projectNestedFormFields<T extends object>(entity: T): T {
+  if (!entity || typeof entity !== 'object') return entity;
+
+  for (const [key, value] of Object.entries(entity)) {
+    if (Array.isArray(value)) {
+      if (value.length === 0) continue;
+      const sample = value[0];
+      const ctor = sample?.constructor;
+      if (ctor && FieldMetaBuilder.buildForm(ctor).length > 0) {
+        (entity as any)[key] = value.map(i => pickFormFields(i, i?.constructor ?? ctor));
+      }
+      continue;
+    }
+
+    if (value && typeof value === 'object') {
+      const ctor = (value as any).constructor;
+      // Skip Date and any non-Object-derived value with a tagged ctor; only
+      // dive into objects whose ctor carries form-meta.
+      if (ctor && ctor !== Object && FieldMetaBuilder.buildForm(ctor).length > 0) {
+        (entity as any)[key] = pickFormFields(value as any, ctor);
+      }
+    }
+  }
+
+  return entity;
 }

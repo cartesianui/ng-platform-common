@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { BaseComponent } from '../base.component';
 import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
 import { IHasForm } from '../base.types';
+import { projectNestedFormFields } from '../models/utils';
 import { RequestState } from '../store';
 @Component({
     template: '',
@@ -32,8 +33,29 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
     this.formGroup = this.getFormFromEntity();
   }
 
+  /**
+   * Subclasses with nested collections (items, lines, charges, attachments,
+   * ...) override this to declare them. The collections are merged onto the
+   * entity inside `getEntityFromForm`, then projected through
+   * `projectNestedFormFields` so each child ships only its declared form
+   * fields.
+   *
+   * Why a hook rather than convention-by-name: avoids hardcoding `items`,
+   * supports any number of collections per page, and keeps the merge a
+   * single explicit place rather than scattered `entity.x = this.x`
+   * assignments before each save call.
+   */
+  protected getNestedCollections(): Record<string, any> {
+    return {};
+  }
+
   protected getEntityFromForm(formGroup?: FormGroup): TEntity {
-    return new this.entityConstructor().fromForm(formGroup ?? this.formGroup);
+    const entity = new this.entityConstructor().fromForm(formGroup ?? this.formGroup);
+    Object.assign(entity, this.getNestedCollections());
+    // Recursively project nested model instances (items/lines/charges/etc.)
+    // through pickFormFields, so parent forms ship a clean payload without
+    // knowing their child constructors. See projectNestedFormFields docs.
+    return projectNestedFormFields(entity) as TEntity;
   }
 
   protected getFormFromEntity(entity?: Partial<TEntity>): FormGroup {

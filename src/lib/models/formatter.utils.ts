@@ -11,6 +11,13 @@ export function formatDate(
   formatter?: FormatterOptions
 ): any {
   try {
+    // Empty / null / undefined / '' is meaningful for date fields — return
+    // null straight through so form controls stay empty and the BE receives
+    // null instead of an "Invalid Date" / "Invalid DateTime" string.
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
     switch (target) {
       case 'form':
         if (value instanceof Date) return value;

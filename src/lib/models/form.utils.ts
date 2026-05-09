@@ -1,6 +1,7 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { FieldDescriptor } from './types';
 import { formatValue } from './formatter.utils';
+import { DatetimeService } from '../services';
 
 /**
  * Interface for classes that can provide values by key
@@ -8,6 +9,30 @@ import { formatValue } from './formatter.utils';
 export interface IValueProvider {
   getValue(property: string): any;
   init(data?: Record<string, any>): this;
+}
+
+/**
+ * Resolve a `defaultValue` declared on a `FieldDescriptor`. Most defaults are
+ * static (literal numbers, strings, etc.) and pass through unchanged. Date
+ * sentinels (`'today' | 'yesterday' | 'tomorrow'`) resolve to a fresh `Date`
+ * at form-build time so date fields can default to "today" without each
+ * create form patching it post-init. Same vocabulary the search-form /
+ * listing-controls hydrator already uses — see
+ * `ListingControlsComponent.resolveDateSentinel`.
+ *
+ * Usage:
+ *   { key: 'orderedAt', label: 'Order Date', defaultValue: 'today',
+ *     opt: { validators: [Validators.required], formatter: { type: 'date' } } }
+ *
+ * Module-load-time `new Date()` would freeze the timestamp at first import,
+ * so the sentinel pattern lets the same descriptor produce the right "now"
+ * on every form construction.
+ */
+function resolveDefaultValue(raw: any): any {
+  // Sentinels coerce to JSDate (form controls / bsDatepicker want a Date);
+  // anything else passes through. Sentinel vocabulary lives on
+  // DatetimeService — see `resolveSentinel`.
+  return DatetimeService.resolveSentinel(raw)?.toJSDate() ?? raw;
 }
 
 /**
@@ -57,7 +82,7 @@ export function formatForForm(
     let value = model.getValue(col.dataKey || col.key);
 
     if (value === null && col.defaultValue !== undefined) {
-      value = col.defaultValue;
+      value = resolveDefaultValue(col.defaultValue);
     }
 
     const formatter = col?.opt?.formatter;
@@ -81,7 +106,7 @@ export function formatForForm(
       value: model.getValue(col.dataKey || col.key),
       error
     });
-    return model.getValue(col.dataKey || col.key) ?? col.defaultValue ?? '';
+    return model.getValue(col.dataKey || col.key) ?? resolveDefaultValue(col.defaultValue) ?? '';
   }
 }
 
@@ -97,7 +122,7 @@ export function toFormGroup(
     const formControls: { [key: string]: FormControl } = {};
 
     const entries = formFields.map((field: any) => {
-      const value = model.getValue(field.dataKey || field.key) ?? (field.defaultValue ?? null);
+      const value = model.getValue(field.dataKey || field.key) ?? (resolveDefaultValue(field.defaultValue) ?? null);
       return {
         key: field.key,
         label: field.label ?? field.key,

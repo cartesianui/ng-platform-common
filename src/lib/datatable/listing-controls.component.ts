@@ -235,16 +235,11 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
 
   private resolveDateSentinel(input: any): DateTime | null {
     if (input instanceof Date) return DatetimeService.fromJSDate(input).startOf('day');
+    const sentinel = DatetimeService.resolveSentinel(input);
+    if (sentinel) return sentinel;
     if (typeof input === 'string') {
-      switch (input) {
-        case 'today':     return DatetimeService.today();
-        case 'yesterday': return DatetimeService.yesterday();
-        case 'tomorrow':  return DatetimeService.tomorrow();
-        default: {
-          const dt = DateTime.fromISO(input);
-          return dt.isValid ? dt.startOf('day') : null;
-        }
-      }
+      const dt = DateTime.fromISO(input);
+      return dt.isValid ? dt.startOf('day') : null;
     }
     return null;
   }
