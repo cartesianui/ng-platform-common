@@ -47,6 +47,22 @@ export class RepeatableFormControlsComponent<TDataModel> {
 
   internalData: TDataModel[] = [];
 
+  /**
+   * Reference to the last array we emitted via `dataChange`.
+   * If the parent assigns this same reference (or a clone of internalData) back
+   * into `data`, we skip the resync to avoid an echo-storm that destroys + rebuilds
+   * every child row component on every keystroke.
+   *
+   * Pattern: parent does `this.items = items` inside its `(dataChange)` handler,
+   * then synchronously mutates totals on its own form. Change detection runs,
+   * `ngOnChanges` fires here with the same array we just emitted. Without this
+   * guard we'd reseat every child's `data` input, which triggers each child's
+   * effect, which rebuilds each child's form group + valueChanges subscription.
+   * Net result: dueling subs on stale form groups → "qty change sometimes
+   * updates, sometimes doesn't."
+   */
+  private lastEmitted: TDataModel[] | null = null;
+
   @ContentChildren(RepeatableDirective, { descendants: true }) itemDirectives!: QueryList<RepeatableDirective>;
 
   constructor(private cdr: ChangeDetectorRef) {}
@@ -67,7 +83,12 @@ export class RepeatableFormControlsComponent<TDataModel> {
   }
 
   ngOnChanges() {
-    // Keep internalData in sync if parent replaces `data`
+    // Skip echoes of our own emission — the parent re-assigning the array we
+    // just emitted is not a real external change.
+    if (this.data === this.lastEmitted) {
+      return;
+    }
+    // Keep internalData in sync if parent genuinely replaces `data`.
     this.internalData = [...this.data];
   }
 
@@ -92,6 +113,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
     // Immutable replacement
     const newData = this.internalData.map((item, i) => (i === index ? value : item));
     this.internalData = newData;
+    this.lastEmitted = newData;
     this.dataChange.emit(newData);
   }
 
@@ -99,12 +121,14 @@ export class RepeatableFormControlsComponent<TDataModel> {
     const newItem = {} as TDataModel;
     const newData = [...this.internalData, newItem];
     this.internalData = newData;
+    this.lastEmitted = newData;
     this.dataChange.emit(newData);
   }
 
   remove(index: number) {
     const newData = this.internalData.filter((_, i) => i !== index);
     this.internalData = newData;
+    this.lastEmitted = newData;
     this.dataChange.emit(newData);
   }
 
