@@ -106,9 +106,21 @@ export class ChoosableControlComponent<T = any>
 
   readonly optionsEffect = effect(() => {
     const opts = this.options();
-    if (opts?.length && this.pendingValue) {
+    if (!opts?.length) return;
+    // Resolve any pending value captured by writeValue before options arrived.
+    if (this.pendingValue != null) {
       this.setResolvedValue(this.pendingValue);
       this.pendingValue = null;
+      return;
+    }
+    // Defensive: if the form control has a value but our internal value()
+    // signal is null (writeValue ran in a previous cycle with empty options,
+    // or an embedded view did not re-trigger writeValue when options arrived),
+    // resolve from the bound NgControl's current value. Without this, radios
+    // render but none appear checked even though the form control is valid.
+    const ngVal = this.ngControl?.value;
+    if (this.value() == null && ngVal != null) {
+      this.setResolvedValue(ngVal);
     }
   });
 
@@ -246,7 +258,7 @@ export class ChoosableControlComponent<T = any>
   // --- CVA Interface ---
   writeValue(value: any): void {
     if (value == null || (Array.isArray(value) && value.length === 0)) {
-      if (!this.options?.length) {
+      if (!this.options()?.length) {
         this.pendingValue = value;
         return;
       }
@@ -254,7 +266,7 @@ export class ChoosableControlComponent<T = any>
       return;
     }
 
-    if (!this.options?.length) {
+    if (!this.options()?.length) {
       this.pendingValue = value;
       return;
     }

@@ -44,7 +44,7 @@ import {
   switchMap,
   tap
 } from 'rxjs';
-import { AppConfig, ObjectUtils } from '@cartesianui/core';
+import { AppConfig, ObjectUtils, RequestCriteria, unwrapFractalData } from '@cartesianui/core';
 import { isUuid, isValidInteger } from '../../helpers';;
 
 @Component({
@@ -86,7 +86,7 @@ import { isUuid, isValidInteger } from '../../helpers';;
           class="flex-grow-1 border-0"
           [placeholder]="multi() && computedValues()?.length ? '' : placeholder()"
           [typeahead]="this.url() || this.optionsUrl() ? items$ : items()"
-          [typeaheadOptionField]="optionField()"
+          [typeaheadOptionField]="displayField() ?? optionField()"
           (typeaheadOnSelect)="onSelect($event.item)"
           [formControl]="searchControl"
           (blur)="handleBlur()"
@@ -163,6 +163,13 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   multi = input(false);
   optionKey = input<string>('id');
   optionField = input('name');
+  // Cosmetic label field. When provided, the dropdown rows + the selected
+  // chip read this property off each item; the user's search query still
+  // runs against `optionField` (a real DB column) and that column is still
+  // requested in the lookup `filter` so search continues to work. Use this
+  // when the BE emits a derived label (e.g. `display_name` with a marker
+  // suffix) that you want shown but cannot search against.
+  displayField = input<string | null>(null);
   // Relations to load on the lookup endpoint (Apiato `include=` param).
   // Accepts CSV string or string[]. Sent on both list and by-id requests.
   include = input<string | string[] | null>(null);
@@ -172,6 +179,40 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   placeholder = input('Search...');
   readonly = input(false);
   allowFreeText = input(false);
+  /**
+   * Extra filters to send alongside the user's name-search. Useful for
+   * parent-id scoping (e.g. batches filtered to current `sku_id`). Each
+   * key/value is appended to the existing `search` query parameter using
+   * Apiato `RequestCriteria` semicolon convention:
+   *
+   *   search = `${optionField}:${userQuery};${k1}:${v1};${k2}:${v2}`
+   *
+   * Null values are skipped — pass `null` when you have no parent id yet
+   * and the control won't add an empty filter. Callers updating the
+   * picker's parent dependency (e.g. SO line: `skuId` changes) should
+   * pass a `Signal`-derived value so the picker re-fetches when the
+   * dependency changes.
+   */
+  searchParams = input<Record<string, string | string[] | null | undefined> | null>(null);
+
+  /**
+   * How multiple `search` filters combine on the BE (Prettus
+   * `RequestCriteria` `searchJoin` parameter).
+   *
+   * - `'and'` (default): every filter must match. Right for parent-id
+   *   scoping — e.g. the batch picker wants `batch_number LIKE …` AND
+   *   `sku_id = …`, NOT either-or.
+   * - `'or'`: any filter matches. Use when the caller wants a
+   *   union of filters (e.g. "name like 'X' OR barcode = 'X'").
+   *
+   * Only takes effect when `searchParams` adds at least one extra filter.
+   * For the user's name-search alone, this input is a no-op.
+   *
+   * Default changed from Prettus's `'or'` to `'and'` here because
+   * picker UX usually wants intersection — overriding the framework
+   * default to match caller intent.
+   */
+  searchJoin = input<'and' | 'or'>('and');
 
   // --- Two-way bound model (keys) ---
   value = model<T[keyof T][] | T[keyof T] | null>(null);
@@ -269,22 +310,18 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         }).pipe(
           switchMap((query: string) => {
             if (!query) return of([]);
-            // TODO: For Edit get/search and set using pendingValue
-            // Convert field name from app format to API format if needed
-            const field = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
-              ? ObjectUtils.convertKey(this.optionField(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
-              : this.optionField();
-            const key = AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP
-              ? ObjectUtils.convertKey(this.optionKey(), AppConfig.keysFormatAPP, AppConfig.keysFormatAPI)
-              : this.optionKey();
-            const params: Record<string, string> = {
-              search: `${field}:${query}`,
-              searchFields: `${field}:like`,
-              output: 'lookup',
-              lookup: this.buildLookupParam(key, field)
-            };
-            const includeParam = this.csv(this.include());
-            if (includeParam) params['include'] = includeParam;
+            // Build the request through `RequestCriteria` so we go through
+            // ONE Prettus param builder (formerly inline; the duplication
+            // motivated `picker-criteria-refactor`).
+            //   - `.where(field, 'like', query)`           → user's name search
+            //   - `.where(k, '=', v)` for each searchParam  → caller filters
+            //   - `.searchJoin(join)` when extras present   → intersect vs union
+            //   - `.with(include)`                         → relations
+            //   - `.asLookup([key, field, ...lookupFields]) → output=lookup
+            // RequestCriteria handles API key conversion internally — no
+            // manual `ObjectUtils.convertKey` calls here.
+            const criteria = this.buildPickerCriteria(query);
+            const params = criteria.pairs() as Record<string, string>;
             return this.http
               .get<any>(`${AppConfig.remoteServiceBaseUrl}${urlValue}`, { params })
               .pipe(
@@ -387,11 +424,68 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     return Array.from(new Set(cleaned)).join(',');
   }
 
-  /** Compose the `lookup=` param: optionKey + optionField + any [lookupFields]. */
-  private buildLookupParam(key: string, field: string): string {
+  /**
+   * Build a `RequestCriteria` describing the typeahead's current search.
+   * One place owns Prettus param shape — see `picker-criteria-refactor`.
+   *
+   * Composition:
+   *   - `where(optionField, 'like', userQuery)`     name-search clause
+   *   - `where(k, '=', v)` per `searchParams`       caller scoping filters
+   *   - `searchJoin(this.searchJoin())`             intersection vs union
+   *   - `with(this.include())`                       Apiato include= relations
+   *   - `output('lookup')`                           trigger LookupResponseMiddleware
+   *   - `filter([optionKey, optionField, ...lookupFields])`  pick columns
+   *
+   * `output` + `filter` are orthogonal: `output('lookup')` is the mode
+   * switch; `filter()` selects columns the same way it does on normal
+   * listings. The BE LookupResponseMiddleware reads both.
+   *
+   * `RequestCriteria` does API key conversion internally — caller passes
+   * app-format keys (camelCase) and the emitted `search`/`searchFields`
+   * params carry the BE-format (snake_case) names.
+   */
+  private buildPickerCriteria(userQuery: string): RequestCriteria {
+    const criteria = new RequestCriteria();
+    criteria.where(this.optionField(), 'like', userQuery);
+
+    const extra = this.searchParams();
+    if (extra) {
+      for (const [k, v] of Object.entries(extra)) {
+        if (v === null || v === undefined || v === '') continue;
+        // Array → `in` (Prettus): `searchFields=k:in&search=k:a,b`.
+        // `=` would emit `k = 'a,b'` (literal CSV) and match nothing.
+        if (Array.isArray(v)) {
+          if (!v.length) continue;
+          criteria.where(k, 'in', v.join(','));
+        } else {
+          criteria.where(k, '=', v);
+        }
+      }
+    }
+
+    criteria.searchJoin(this.searchJoin());
+
+    const includeCsv = this.csv(this.include());
+    if (includeCsv) {
+      criteria.with(includeCsv);
+    }
+
+    // Column selection: key + field + optional display field + any
+    // caller-declared lookupFields. `displayField` is requested so the
+    // BE-derived label (e.g. `display_name`) lands on each row for the
+    // typeahead to render; it's NOT used in the where-clause above.
+    const cols = [this.optionKey(), this.optionField()];
+    const display = this.displayField();
+    if (display && display !== this.optionField()) cols.push(display);
     const extras = this.csv(this.lookupFields());
-    const base = `${key},${field}`;
-    return extras ? `${base},${extras}` : base;
+    if (extras) cols.push(...extras.split(','));
+    criteria.filter(cols);
+
+    // Trigger the BE LookupResponseMiddleware (skip pagination, unwrap
+    // Fractal `{data: ...}` on included relations).
+    criteria.output('lookup');
+
+    return criteria;
   }
 
   // Fetch multiple items by ids in parallel (used for multi-select edit
@@ -415,7 +509,9 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
               if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
                 item = ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
               }
-              return item;
+              // Strip Fractal envelopes from included relations — see
+              // `unwrapFractalData` doc-comment in helpers.ts.
+              return unwrapFractalData(item);
             })
             .filter((it) => !!it);
 
@@ -446,17 +542,27 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
   // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
   private getItemById(id: any): void {
-    // Prevent duplicate fetches for the same ID
+    // Prevent duplicate fetches for the same ID. The cache is only ever set
+    // AFTER a successful HTTP response (see `lastFetchedId = id` inside the
+    // `next` handler) — never speculatively. That way a transient failure
+    // (URL not ready, network blip, BE 500) leaves the picker free to retry
+    // on the next writeValue or url-effect tick, instead of silently
+    // suppressing the request forever.
     if (this.lastFetchedId === id) {
       return;
     }
 
     const url = this.getByIdUrl() ?? this.optionsUrl() ?? this.url();
-    this.lastFetchedId = id;
+    if (!url) {
+      // No URL yet — bail and let the URL effect retry once the input
+      // signal settles. `pendingRawValue` (set by the caller in writeValue)
+      // is the rendezvous point that lets the effect pick this up.
+      return;
+    }
 
     this.subs.add(
       this.http
-        .get<any>(this.buildByIdUrl(url!, id))
+        .get<any>(this.buildByIdUrl(url, id))
         .subscribe({
           next: (res) => {
             // Handle wrapped response (e.g., { data: {...} })
@@ -464,6 +570,10 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             if (AppConfig.keysFormatAPI !== AppConfig.keysFormatAPP) {
               item = ObjectUtils.convertObjectKeys(res.data, AppConfig.keysFormatAPI, AppConfig.keysFormatAPP);
             }
+            // Strip Fractal `{ data: ... }` envelopes from included relations
+            // so consumers can walk the tree without an extra `data` hop at
+            // every boundary. Matches the lookup-mode response shape.
+            item = unwrapFractalData(item);
 
             if (item) {
               // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
@@ -471,13 +581,15 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                 this.items.set([item]);
                 this.setResolvedValue(id);
                 this.pendingRawValue = null;
+                // Only now is it safe to mark this id as resolved.
+                this.lastFetchedId = id;
                 this.cdr.markForCheck();
               }, 0);
             }
           },
           error: () => {
-            // If fetch by id fails, reset lastFetchedId to allow retry
-            this.lastFetchedId = null;
+            // Don't pollute the dedup cache — a future attempt should be
+            // free to retry. `lastFetchedId` was never set, nothing to clear.
             this.cdr.markForCheck();
           }
         })
@@ -793,7 +905,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   }
 
   getOptionLabel(item: T): string {
-    const field = this.optionField();
+    const field = this.displayField() ?? this.optionField();
     return (item && (item as any)[field]) ?? String(item);
   }
 

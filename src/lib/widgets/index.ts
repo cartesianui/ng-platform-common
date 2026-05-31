@@ -3,3 +3,5 @@ export * from './actions/default-actions.component';
 export * from './search-panel/search-panel.component';
 export * from './image-thumb/image-thumb.component';
 export * from './value-info/value-info.component';
+export * from './alert/alert.component';
+export * from './dialog';

@@ -1,0 +1,25 @@
+<div class="app-dialog" [ngClass]="kindClass">
+  <div class="app-dialog__header">
+    <div class="app-dialog__title">
+      <span class="app-dialog__icon"><i [class]="iconClass"></i></span>
+      <span class="app-dialog__title-text">{{ title }}</span>
+    </div>
+    <button type="button" class="app-dialog__close" aria-label="Close" (click)="cancel()">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+
+  <div class="app-dialog__body">
+    <ng-container *ngIf="template; else messageBlock">
+      <ng-container *ngTemplateOutlet="template; context: templateContext"></ng-container>
+    </ng-container>
+    <ng-template #messageBlock>
+      <p class="mb-0">{{ message }}</p>
+    </ng-template>
+  </div>
+
+  <div class="app-dialog__footer">
+    <button type="button" class="btn btn-light btn-sm" (click)="cancel()">{{ cancelLabel }}</button>
+    <button type="button" [ngClass]="okButtonClass" class="btn-sm" (click)="confirm()">{{ okLabel }}</button>
+  </div>
+</div>

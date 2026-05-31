@@ -130,12 +130,23 @@ export class DatetimeService {
   }
 
   /**
-   * 
-   * @param date 
-   * @returns UTC/ISO
+   * Serialize a Luxon DateTime as the BE-facing calendar-day string
+   * (`YYYY-MM-DD`) using the **tenant time zone**, not UTC.
+   *
+   * Why not `toUTC().toISO()` (the previous shape):
+   * For a date-only field like `expiry_date`, the FE loads `'2028-05-13'`
+   * → Luxon parses as PKT midnight → JS Date instant `2028-05-12T19:00:00Z`.
+   * On save, `toUTC().toISO()` produces `'2028-05-12T19:00:00.000Z'`; the
+   * BE truncates the time component **using UTC** and persists `2028-05-12`
+   * — one calendar day before what the user actually saw / picked.
+   *
+   * Reading the calendar day off the tenant-zoned DateTime instead keeps
+   * the round-trip stable: load `'2028-05-13'` → display 13 → save `'2028-05-13'`.
+   * Matches the canonicalization the `formatDate('db', ...)` formatter
+   * already uses on the `parseUserInput` branch.
    */
   public static toApiDate(date: DateTime): string {
-    return date.toUTC().toISO();
+    return date.setZone(DateTimeSettings.defaultZone).toFormat('yyyy-MM-dd');
   }
 
   static timeSince(start: string, precision: 'years' | 'months' | 'days' = 'years'): string {

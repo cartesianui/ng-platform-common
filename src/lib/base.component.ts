@@ -17,6 +17,7 @@ import {
   HttpErrorService
 } from '@cartesianui/core';
 import { ValidationService } from './form/validation';
+import { AppDialogService } from './widgets/dialog';
 import { ChildComponent, ChildComponentSelected } from './base.types';
 import { isEqual } from 'lodash';
 
@@ -34,6 +35,7 @@ export abstract class BaseComponent<TChildComponent extends ChildComponent = {}>
   protected ui = inject(UiService);
   protected setting = inject(SettingService);
   protected message = inject(MessageService);
+  protected dialog = inject(AppDialogService);
   protected tenancy = inject(TenancyService);
   protected appSession = inject(SessionService);
   protected formValidator = inject(ValidationService);

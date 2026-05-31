@@ -81,15 +81,24 @@ export function toLabel(str: string, options: ToLabelOptions = {}): string {
       .join(' ');
   }
 
-  // Handle camelCase / PascalCase
+  // Handle camelCase / PascalCase — split on case transitions.
+  // First regex: lower-to-upper transition (camelCase -> camel Case).
+  // Second regex: acronym-to-word transition (HTTPRequest -> HTTP Request).
   const formatted = str
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
 
-  if (!preserveAcronyms) {
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1).toLowerCase();
-  }
-
-  // Capitalize first letter of the string
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  // Title-case EVERY word (parity with the snake_case branch above), not just
+  // the first character — otherwise `tenantManagement` renders as
+  // `'Tenant management'` instead of `'Tenant Management'`.
+  return formatted
+    .split(' ')
+    .map(word => {
+      if (!word) return word;
+      if (preserveAcronyms && word === word.toUpperCase()) {
+        return word; // keep acronym
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
 }

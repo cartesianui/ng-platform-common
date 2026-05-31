@@ -1,4 +1,6 @@
 import { DatetimeService, DateFormat } from '../services';
+import { parseDigitsInfo } from '../helpers/currency.helpers';
+import { regionalCurrency, regionalLocale } from '../helpers/regional.helpers';
 import { FormatterOptions, BadgeColor } from './types';
 import { FormatterRegistry } from './formatter.registry';
 
@@ -303,20 +305,45 @@ export function formatValue(
 }
 
 // ─── Register built-in formatters ───────────────────────────────────────────
+// `regionalLocale` / `regionalCurrency` are imported from
+// `regional.helpers.ts` (single source of truth for the `cartesian.regional`
+// fallback chain). Used here in the `'number'` and `'currency'` formatters.
 
 FormatterRegistry.register('date', (target, value, formatter) => {
   return formatDate(target, value, formatter);
 });
 
 FormatterRegistry.register('number', (_target, value, formatter) => {
-  return new Intl.NumberFormat(formatter?.locale || 'en-US').format(Number(value));
+  return new Intl.NumberFormat(formatter?.locale || regionalLocale()).format(Number(value));
 });
 
-FormatterRegistry.register('currency', (_target, value, formatter) => {
-  return new Intl.NumberFormat(formatter?.locale || 'en-US', {
+FormatterRegistry.register('currency', (target, value, formatter) => {
+  // Display targets only — `'form'` feeds editable FormControl values and
+  // `'db'` feeds the API submit body; both must stay numeric (the BE rejects
+  // `"Rs 4.00"`). For those targets pad to 2dp without the currency prefix
+  // so `decimalFormat` initial-render and DB serialization both see a clean
+  // numeric string. `'dt'` (datatable) and any other display target get the
+  // full Intl.NumberFormat currency rendering.
+  const n = Number(value);
+  if (!Number.isFinite(n)) return value;
+
+  if (target === 'form' || target === 'db') {
+    return n.toFixed(2);
+  }
+
+  // 2dp default for the same reason as `RegionalCurrencyPipe`: PKR's
+  // CLDR default fraction digits is 0, which truncates line totals
+  // (24.95 → "Rs 25"). Per-column override via `formatter.digitsInfo`
+  // (Angular's `'minIntegerDigits.minFractionDigits-maxFractionDigits'`
+  // shorthand) — matches the pipe's third arg so both surfaces speak
+  // the same shape.
+  return new Intl.NumberFormat(formatter?.locale || regionalLocale(), {
     style: 'currency',
-    currency: formatter?.currency || 'USD'
-  }).format(Number(value));
+    currency: formatter?.currency || regionalCurrency(),
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    ...parseDigitsInfo((formatter as any)?.digitsInfo),
+  }).format(n);
 });
 
 FormatterRegistry.register('func', (_target, value, formatter, model) => {

@@ -46,6 +46,23 @@ export class ValidationService {
         const minRequirement = this.getErrorMessage(errors, 'minlength')?.requiredLength;
         return ERROR_MESSAGES['minlength'](formControlName, minRequirement);
 
+      case this.checkErrorType(errors, 'maxlength'):
+        const maxRequirement = this.getErrorMessage(errors, 'maxlength')?.requiredLength;
+        return ERROR_MESSAGES['maxlength'](formControlName, maxRequirement);
+
+      // Angular's Validators.min sets the error payload as { min: { min, actual } }.
+      // Surface the schema-declared floor (`min` key) — actual is just current input.
+      case this.checkErrorType(errors, 'min'):
+        const minFloor = this.getErrorMessage(errors, 'min')?.min;
+        return ERROR_MESSAGES['min'](formControlName, minFloor);
+
+      case this.checkErrorType(errors, 'max'):
+        const maxCeiling = this.getErrorMessage(errors, 'max')?.max;
+        return ERROR_MESSAGES['max'](formControlName, maxCeiling);
+
+      case this.checkErrorType(errors, 'pattern'):
+        return ERROR_MESSAGES['pattern'](formControlName);
+
       default:
         return 'Invalid';
     }

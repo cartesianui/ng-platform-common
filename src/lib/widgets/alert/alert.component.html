@@ -1,0 +1,9 @@
+<alert [type]="kind" [dismissible]="dismissible" (onClose)="onClosed()">
+  <div class="d-flex align-items-start gap-2">
+    <i *ngIf="icon" [class]="icon + ' mt-1'"></i>
+    <div class="flex-grow-1">
+      <div *ngIf="title" class="fw-semibold mb-1">{{ title }}</div>
+      <ng-content></ng-content>
+    </div>
+  </div>
+</alert>
