@@ -79,11 +79,16 @@ export function formatMultiline(
   if (primary) return primary;
 
   if (formatter.fallbackItems && Array.isArray(formatter.fallbackItems)) {
-    return renderMultilineItems(
+    const fallback = renderMultilineItems(
       formatter.fallbackItems as (FormatterOptions | FormatterOptions[])[],
       formatter,
       model
     );
+    if (fallback) return fallback;
+  }
+
+  if (formatter.defaultText) {
+    return `<small class="text-muted">${formatter.defaultText}</small>`;
   }
 
   return '';

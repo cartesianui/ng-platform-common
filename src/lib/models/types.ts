@@ -49,6 +49,10 @@ export type FormatterOptions = {
   // Rendered only when every `items[].key` resolves to empty/null on the row.
   // Used for conditional cells (e.g. registered customer vs walk-in name/phone).
   fallbackItems?: (FormatterOptions | FormatterOptions[])[];
+  // Static text rendered when BOTH `items` and `fallbackItems` are empty.
+  // Wrapped in a muted span so it visually reads as "no data" rather than
+  // a real value (e.g. "N/A" on a Source col for direct-entry vouchers).
+  defaultText?: string;
   separator?: 'br' | 'space' | 'none';  // How to separate lines (default: 'br')
   groupSeparator?: string;  // Separator between grouped items on same line (default: '|')
   // Image-formatter-only options (type: 'image')
