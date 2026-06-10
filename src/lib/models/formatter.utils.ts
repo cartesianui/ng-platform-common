@@ -76,7 +76,7 @@ export function formatMultiline(
     model
   );
 
-  if (primary) return primary;
+  if (primary) return wrapWithTooltip(primary, formatter, model);
 
   if (formatter.fallbackItems && Array.isArray(formatter.fallbackItems)) {
     const fallback = renderMultilineItems(
@@ -84,7 +84,7 @@ export function formatMultiline(
       formatter,
       model
     );
-    if (fallback) return fallback;
+    if (fallback) return wrapWithTooltip(fallback, formatter, model);
   }
 
   if (formatter.defaultText) {
@@ -92,6 +92,83 @@ export function formatMultiline(
   }
 
   return '';
+}
+
+/**
+ * Wrap any rendered cell HTML with a styled, focus-revealing tooltip
+ * affordance. Pure CSS reveal — hover OR click (via `:focus-visible` on
+ * the icon button) pops a themed bubble with an arrow. Mirrors the
+ * existing image-preview overflow-escape pattern in `_datatable.scss`
+ * (`:has()` overrides on ngx-datatable cell containers).
+ *
+ * Public so it can be invoked from any formatter (text, badge, multiline,
+ * custom func). The canonical pattern is to read `tooltipKey` off the
+ * formatter and call this after rendering. Multiline calls it for you;
+ * other formatters can call it explicitly when they want the affordance.
+ *
+ * No-op when `tooltipKey` isn't set or the resolved value is empty.
+ *
+ * Optional `tooltipLabel` (per-formatter) renders as a small dimmed
+ * header above the value, so the popup self-identifies — e.g.
+ * "Source chain" / "Details" / "Audit trail".
+ *
+ * HTML shape (see `.dt-tip-*` styles in `_datatable.scss`):
+ *
+ *   <span class="dt-tip">
+ *     <span class="dt-tip-content">{html}</span>
+ *     <button class="dt-tip-trigger" type="button" tabindex="0"
+ *             aria-label="{label or 'Show details'}">
+ *       <i class="fa fa-info-circle" aria-hidden="true"></i>
+ *     </button>
+ *     <span class="dt-tip-bubble" role="tooltip">
+ *       <span class="dt-tip-bubble-label">{label}</span>  ← if set
+ *       <span class="dt-tip-bubble-value">{tooltip}</span>
+ *     </span>
+ *   </span>
+ */
+/**
+ * Per-theme icon — same FA glyphs Bootstrap uses for alert.icon / toast
+ * variants, so the tooltip reads as the same status family.
+ */
+const TOOLTIP_THEME_ICONS = {
+  info:    'fa-info-circle',
+  success: 'fa-check-circle',
+  warning: 'fa-exclamation-triangle',
+  danger:  'fa-exclamation-circle',
+} as const;
+
+export function wrapWithTooltip(
+  html: string,
+  formatter: FormatterOptions,
+  model: { getValue: (key: string) => any }
+): string {
+  if (!formatter.tooltipKey) return html;
+  const raw = model.getValue(formatter.tooltipKey);
+  if (raw == null || raw === '') return html;
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;')
+     .replace(/"/g, '&quot;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;');
+  const tip = escape(String(raw));
+  const label = formatter.tooltipLabel ? escape(String(formatter.tooltipLabel)) : '';
+  const a11yLabel = label || 'Show details';
+  const theme = formatter.tooltipTheme && TOOLTIP_THEME_ICONS[formatter.tooltipTheme]
+    ? formatter.tooltipTheme
+    : 'info';
+  const iconClass = TOOLTIP_THEME_ICONS[theme];
+  return (
+    `<span class="dt-tip dt-tip--${theme}">` +
+      `<span class="dt-tip-content">${html}</span>` +
+      `<button class="dt-tip-trigger" type="button" tabindex="0" aria-label="${a11yLabel}">` +
+        `<i class="fa ${iconClass}" aria-hidden="true"></i>` +
+      `</button>` +
+      `<span class="dt-tip-bubble" role="tooltip">` +
+        (label ? `<span class="dt-tip-bubble-label">${label}</span>` : '') +
+        `<span class="dt-tip-bubble-value">${tip}</span>` +
+      `</span>` +
+    `</span>`
+  );
 }
 
 /**

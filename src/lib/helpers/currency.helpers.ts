@@ -47,6 +47,42 @@ export function roundDecimal(value: number | string | null | undefined, precisio
  *
  * `digitsInfo` shape: `minIntegerDigits.minFractionDigits-maxFractionDigits`.
  */
+export interface LineTaxResult {
+  /** Net (pre-tax) line amount. */
+  net: number;
+  /** Tax amount for the line. */
+  tax: number;
+}
+
+/**
+ * Resolve a charge line's NET (pre-tax) amount and its tax, mirroring the BE
+ * `ResolveLineTaxTask` rate math so FE displays match the persisted snapshot.
+ *
+ *   base = unitPrice * qty - discount
+ *   - exclusive: net = base,                tax = base * rate%
+ *   - inclusive: net = base / (1 + rate%),  tax = base - net
+ *   - rate 0 (and fixed-amount tax, which the FE has no input for): tax = 0
+ *
+ * Keep `net` as the line total everywhere (BE stores `line_total` = net), and
+ * sum `tax` separately into the document tax total.
+ */
+export function resolveLineTax(
+  taxRate: number | string | null | undefined,
+  unitPrice: number | string | null | undefined,
+  qty: number | string | null | undefined,
+  discount: number | string | null | undefined = 0,
+  inclusive = false,
+): LineTaxResult {
+  const base = roundDecimal((Number(unitPrice) || 0) * (Number(qty) || 0) - (Number(discount) || 0));
+  const rate = Number(taxRate) || 0;
+  if (rate === 0) return { net: base, tax: 0 };
+  if (inclusive) {
+    const net = roundDecimal(base / (1 + rate / 100));
+    return { net, tax: roundDecimal(base - net) };
+  }
+  return { net: base, tax: roundDecimal(base * rate / 100) };
+}
+
 export function parseDigitsInfo(digitsInfo?: string): Pick<
   Intl.NumberFormatOptions,
   'minimumIntegerDigits' | 'minimumFractionDigits' | 'maximumFractionDigits'

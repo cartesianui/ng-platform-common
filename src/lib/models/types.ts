@@ -55,6 +55,20 @@ export type FormatterOptions = {
   defaultText?: string;
   separator?: 'br' | 'space' | 'none';  // How to separate lines (default: 'br')
   groupSeparator?: string;  // Separator between grouped items on same line (default: '|')
+  // Tooltip affordance — when set, the rendered cell is wrapped with an
+  // info-icon trigger that reveals a styled popup on hover OR click
+  // (`:focus-visible` via the focusable trigger button). The popup text
+  // comes from this key (dot-paths supported). Useful for showing
+  // extended context on hover without bloating the cell — e.g. single
+  // doc number in cell, full chain on hover.
+  tooltipKey?: string;
+  // Optional small dimmed header rendered inside the tooltip popup,
+  // above the value. Self-identifies the popup, e.g. "Source chain".
+  tooltipLabel?: string;
+  // Bootstrap theme variant for the tooltip — drives icon shape +
+  // accent color. Defaults to `info`. Add cases here as new themes
+  // gain semantic meaning across the app.
+  tooltipTheme?: 'info' | 'success' | 'warning' | 'danger';
   // Image-formatter-only options (type: 'image')
   preview?: boolean;        // Enable hover preview (default: true)
   previewSize?: 'xs' | 'passport' | 'avatar' | 'small' | 'medium' | 'large' | 'product';  // Preview preset (default: 'medium')

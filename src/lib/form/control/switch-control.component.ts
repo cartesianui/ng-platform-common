@@ -15,6 +15,13 @@ import {
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
+// Module-scoped counter for unique DOM ids. `crypto.randomUUID()` is only
+// available in secure contexts (HTTPS, localhost, 127.0.0.1); on
+// non-secure dev origins (e.g. *.cui via custom /etc/hosts) it's
+// undefined and throws "is not a function". DOM ids only need uniqueness,
+// not unpredictability.
+let switchControlIdSeq = 0;
+
 @Component({
   selector: 'switch-control',
   standalone: true,
@@ -55,7 +62,7 @@ export class SwitchControlComponent implements ControlValueAccessor {
   value = model<boolean | null>(null);
   valueChange = output<boolean | null>();
 
-  id = crypto.randomUUID();
+  id = `switch-control-${++switchControlIdSeq}`;
 
   localValue = false;
   disabled = false;
