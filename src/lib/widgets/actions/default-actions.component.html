@@ -4,7 +4,7 @@
     <div class="col-md-7 justify-content-start">
       <div class="d-flex flex-wrap align-items-stretch gap-2">
         <!-- Search Bar -->
-        <div *ngIf="searchChange.subscriberCount" class="input-group input-group-sm" style="width: 240px">
+        <div *ngIf="searchChange.subscriberCount" class="input-group" style="width: 240px">
           <span class="input-group-text bg-white">
             <i class="fas fa-search text-muted"></i>
           </span>
@@ -24,6 +24,18 @@
         <button *ngIf="create.subscriberCount && !_hide?.create" [disabled]="_disabled?.create ?? false" class="btn btn-sm btn-primary" [ngClass]="getDisplayClasses()" (click)="onCreate($event)">
           <i class="fa fa-plus" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Create</span>
+        </button>
+
+        <!-- Hire Button -->
+        <button *ngIf="hire.subscriberCount && !_hide?.hire" [disabled]="_disabled?.hire ?? false" class="btn btn-sm btn-primary" [ngClass]="getDisplayClasses()" (click)="onHire($event)">
+          <i class="fa fa-user-plus" *ngIf="showIcon()"></i>
+          <span *ngIf="showText()">{{ label('hire', 'Hire') }}</span>
+        </button>
+
+        <!-- Workspace Button -->
+        <button *ngIf="workspace.subscriberCount && !_hide?.workspace" [disabled]="_disabled?.workspace ?? false" class="btn btn-sm btn-outline-primary" [ngClass]="getDisplayClasses()" (click)="onWorkspace($event)">
+          <i class="fa fa-briefcase" *ngIf="showIcon()"></i>
+          <span *ngIf="showText()">{{ label('workspace', 'Go To Workspace') }}</span>
         </button>
 
         <!-- Edit Button -->

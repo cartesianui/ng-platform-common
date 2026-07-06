@@ -55,13 +55,41 @@ export interface LineTaxResult {
 }
 
 /**
+ * Optional fixed-amount tax inputs for {@link resolveLineTax}, mirroring the
+ * BE `ResolveLineTaxTask` `type=fixed` branch. Omit entirely for the
+ * percentage-rate path — the signature and rate math stay byte-for-byte
+ * identical for existing callers that pass only the positional args.
+ *
+ *   - `type === 'fixed'` → tax = fixedAmount * qty (per-unit fixed amount),
+ *     `tax_rate` reported as 0; inclusive subtracts the fixed amount from the
+ *     net, exclusive keeps the net at base. The positional `taxRate` arg is
+ *     ignored in this branch (matches the BE, which returns tax_rate 0 for
+ *     fixed categories).
+ *   - `type === 'rate'` (or undefined) → the existing percentage-rate path.
+ */
+export interface LineTaxOptions {
+  /** Tax category type. Defaults to `'rate'` (existing behavior). */
+  type?: 'rate' | 'fixed' | string | null | undefined;
+  /** Per-unit fixed amount (used only when `type === 'fixed'`). */
+  fixedAmount?: number | string | null | undefined;
+}
+
+/**
  * Resolve a charge line's NET (pre-tax) amount and its tax, mirroring the BE
- * `ResolveLineTaxTask` rate math so FE displays match the persisted snapshot.
+ * `ResolveLineTaxTask` math so FE displays match the persisted snapshot.
  *
  *   base = unitPrice * qty - discount
+ *
+ * Rate path (default — `opts` omitted or `opts.type !== 'fixed'`):
  *   - exclusive: net = base,                tax = base * rate%
  *   - inclusive: net = base / (1 + rate%),  tax = base - net
- *   - rate 0 (and fixed-amount tax, which the FE has no input for): tax = 0
+ *   - rate 0: tax = 0
+ *
+ * Fixed path (`opts.type === 'fixed'`, `opts.fixedAmount` = F per unit):
+ *   - fixed = F * qty
+ *   - exclusive: net = base,         tax = fixed
+ *   - inclusive: net = base - fixed, tax = fixed
+ *   - tax_rate is 0 (the positional `taxRate` arg is ignored here).
  *
  * Keep `net` as the line total everywhere (BE stores `line_total` = net), and
  * sum `tax` separately into the document tax total.
@@ -72,8 +100,18 @@ export function resolveLineTax(
   qty: number | string | null | undefined,
   discount: number | string | null | undefined = 0,
   inclusive = false,
+  opts?: LineTaxOptions,
 ): LineTaxResult {
   const base = roundDecimal((Number(unitPrice) || 0) * (Number(qty) || 0) - (Number(discount) || 0));
+
+  if (opts?.type === 'fixed') {
+    const fixed = roundDecimal((Number(opts.fixedAmount) || 0) * (Number(qty) || 0));
+    if (inclusive) {
+      return { net: roundDecimal(base - fixed), tax: fixed };
+    }
+    return { net: base, tax: fixed };
+  }
+
   const rate = Number(taxRate) || 0;
   if (rate === 0) return { net: base, tax: 0 };
   if (inclusive) {

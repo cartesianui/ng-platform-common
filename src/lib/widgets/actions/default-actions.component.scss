@@ -2,20 +2,26 @@
 .app-actions {
   padding-bottom: 0.5rem;
 
+  // Mockup action buttons: ~13px label, comfortable hit area, soft lift on
+  // the solid primary (Create/Save) so it reads as the page's lead action.
   .btn {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.6rem;
-    font-weight: 500;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
     letter-spacing: 0.01em;
 
     i {
-      margin-inline-end: 0.3rem;
-      font-size: 0.7rem;
+      margin-inline-end: 0.4rem;
+      font-size: 0.8rem;
     }
 
     i:only-child {
       margin-inline-end: 0;
     }
+  }
+
+  .btn-primary {
+    box-shadow: 0 6px 14px -8px var(--cui-primary);
   }
 
   // Ensure consistent small input heights align with buttons

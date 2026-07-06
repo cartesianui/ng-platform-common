@@ -104,8 +104,33 @@ import { isUuid, isValidInteger } from '../../helpers';;
         width: 100%;
       }
 
+      /* Match the global .form-control input style (white surface, light
+         --ct-border, ~44px height, theme focus ring). The wrapper already
+         carries .form-control for bg/border/radius/padding; just align the
+         height + focus to the theme. */
       .lookup-input-wrapper {
-        min-height: 38px;
+        min-height: 44px;
+        /* anchor for the typeahead dropdown pinned below (see ::ng-deep rule) */
+        position: relative;
+      }
+
+      /* ── Typeahead suggestions: hard-pin directly below the input ──────────
+         ngx-bootstrap appends the <typeahead-container> into the input's parent
+         (.lookup-input-wrapper) and positions it with a per-frame
+         transform: translate3d() run through its shift/preventOverflow
+         modifiers. Inside constrained/scrolled forms & modals those modifiers
+         shove the dropdown UPWARD over the input/label (it should open below).
+         We override ngx's inline transform/top with !important and pin the list
+         to the wrapper's bottom-left. Same root cause + remedy as the queue
+         date-picker (see coreui _theme.scss). :host scopes it to this control
+         so other typeaheads are unaffected. */
+      :host ::ng-deep typeahead-container {
+        position: absolute !important;
+        inset: auto auto auto 0 !important;
+        top: calc(100% + 2px) !important;
+        transform: none !important;
+        will-change: auto !important;
+        width: 100%;
       }
 
       .lookup-input-wrapper:not([readonly]) {
@@ -116,16 +141,20 @@ import { isUuid, isValidInteger } from '../../helpers';;
         outline: none;
         min-width: 120px;
         background-color: inherit;
+        color: var(--ct-text, inherit);
+      }
+      .lookup-input-wrapper input::placeholder {
+        color: var(--ct-text-faint, #9298ad);
       }
 
       .lookup-input-wrapper:focus-within:not([readonly]) {
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: var(--cui-primary);
+        box-shadow: 0 0 0 0.2rem var(--ct-ring, rgba(79, 70, 229, 0.25));
       }
 
       .lookup-input-wrapper[readonly] {
         cursor: not-allowed;
-        background-color: #e9ecef;
+        background-color: var(--cui-secondary-bg);
       }
 
       .readonly-text {
@@ -163,6 +192,12 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   multi = input(false);
   optionKey = input<string>('id');
   optionField = input('name');
+  // Multi-field typeahead: when set, the typed query is matched (`like`)
+  // against EACH field and OR-joined — e.g. patients by name / phone / email.
+  // Overrides the single-`optionField` search. Each field must be searchable
+  // on the BE model (Prettus `$fieldSearchable`). Intended for UNSCOPED
+  // pickers (no `searchParams`), since the OR-join applies to all clauses.
+  searchFields = input<string[] | null>(null);
   // Cosmetic label field. When provided, the dropdown rows + the selected
   // chip read this property off each item; the user's search query still
   // runs against `optionField` (a real DB column) and that column is still
@@ -446,7 +481,15 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
    */
   private buildPickerCriteria(userQuery: string): RequestCriteria {
     const criteria = new RequestCriteria();
-    criteria.where(this.optionField(), 'like', userQuery);
+    // Multi-field search (name/phone/email/…) when `searchFields` is set,
+    // OR-joined; otherwise the single `optionField` `like` clause.
+    const fields = this.searchFields();
+    const multiField = !!(fields && fields.length);
+    if (multiField) {
+      for (const f of fields!) criteria.where(f, 'like', userQuery);
+    } else {
+      criteria.where(this.optionField(), 'like', userQuery);
+    }
 
     const extra = this.searchParams();
     if (extra) {
@@ -463,7 +506,9 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       }
     }
 
-    criteria.searchJoin(this.searchJoin());
+    // Multi-field query is inherently OR (match ANY field). Single-field
+    // search honours the caller's searchJoin (intersect/union with scoping).
+    criteria.searchJoin(multiField ? 'or' : this.searchJoin());
 
     const includeCsv = this.csv(this.include());
     if (includeCsv) {
@@ -540,6 +585,25 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     );
   }
 
+  /**
+   * Look for an already-available option matching `id` — either in the
+   * caller-supplied `[options]` list or the pre-resolved `[entity]` input.
+   * Lets `getItemById` resolve a known value without an HTTP round-trip
+   * (used by server-bundled forms that ship the resolved option inline).
+   */
+  private findPreloadedById(id: any): T | null {
+    const key = this.optionKey() as string;
+
+    const opts = this.options() ?? [];
+    const inOpts = (opts as any[]).find((o: any) => o?.[key] === id);
+    if (inOpts) return inOpts as T;
+
+    const ent = this.entity();
+    const arr = Array.isArray(ent) ? ent : ent ? [ent] : [];
+    const inEnt = (arr as any[]).find((o: any) => o?.[key] === id);
+    return (inEnt as T) ?? null;
+  }
+
   // Fetch a single item by id from the URL endpoint (used for edit forms with initial id value)
   private getItemById(id: any): void {
     // Prevent duplicate fetches for the same ID. The cache is only ever set
@@ -549,6 +613,26 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     // on the next writeValue or url-effect tick, instead of silently
     // suppressing the request forever.
     if (this.lastFetchedId === id) {
+      return;
+    }
+
+    // Caller pre-supplied the resolved option (via `[entity]` or `[options]`,
+    // e.g. a server-bundled config form) — resolve locally and SKIP the HTTP
+    // round-trip. Purely additive: only short-circuits when a matching option
+    // is already present; otherwise the normal fetch below runs unchanged.
+    const preloaded = this.findPreloadedById(id);
+    if (preloaded) {
+      const key = this.optionKey() as string;
+      setTimeout(() => {
+        const existing = this.items() ?? [];
+        if (!existing.some((m: any) => m?.[key] === id)) {
+          this.items.set([...existing, preloaded]);
+        }
+        this.setResolvedValue(id);
+        this.pendingRawValue = null;
+        this.lastFetchedId = id;
+        this.cdr.markForCheck();
+      }, 0);
       return;
     }
 
@@ -803,7 +887,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     for (const k of keys) {
       let match: T | undefined = undefined;
       try {
-        match = allOptions.find((opt) => this.getOptionKey(opt) === k);
+        match = allOptions.find((opt) => this.keysEqual(this.getOptionKey(opt), k));
       } catch {
         match = undefined;
       }
@@ -811,7 +895,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       // If not found in the current option set, try previously selected entities
       if (!match && prevArr.length) {
         try {
-          match = prevArr.find((opt) => this.getOptionKey(opt) === k);
+          match = prevArr.find((opt) => this.keysEqual(this.getOptionKey(opt), k));
         } catch {
           match = undefined;
         }
@@ -904,9 +988,30 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     }
   }
 
+  /**
+   * Compare two option keys for identity, tolerating type drift between the
+   * stored form value and the fetched option's key. Integer-keyed lookups
+   * (e.g. countries: PK `int`) round-trip through the config layer as STRINGS
+   * — the BE coerces `entity` config values to string — so on edit-prefill the
+   * stored `"167"` must still match the fetched country's numeric `167`. uuid
+   * keys are string-on-both-sides and unaffected. Null/undefined never match.
+   */
+  private keysEqual(a: any, b: any): boolean {
+    if (a == null || b == null) return false;
+    return a === b || String(a) === String(b);
+  }
+
   getOptionLabel(item: T): string {
-    const field = this.displayField() ?? this.optionField();
-    return (item && (item as any)[field]) ?? String(item);
+    // Prefer the display field, fall back to the option field — a resolved
+    // option may carry only the option field (e.g. server-bundled config
+    // values where the display column is lookup-computed). Without the
+    // fallback the label would render "[object Object]".
+    const disp = this.displayField();
+    const opt = this.optionField();
+    const val =
+      (item && disp ? (item as any)[disp] : undefined) ??
+      (item ? (item as any)[opt] : undefined);
+    return (val ?? String(item)) as string;
   }
 
   equals(a: T, b: T): boolean {

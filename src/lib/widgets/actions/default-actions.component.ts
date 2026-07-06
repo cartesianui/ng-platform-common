@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 
 export type DisplayMode = 'icon' | 'text' | 'icon_text';
@@ -27,9 +27,23 @@ export class DefaultActionsComponent {
   @Input() startDate: string = '';
   @Input() endDate: string = '';
 
+  /**
+   * Optional per-action label overrides, keyed by action name (e.g.
+   * `{ hire: 'Onboard', workspace: 'Open' }`). Lets a consumer relabel any
+   * button without forking the template. Falls back to each button's default.
+   */
+  readonly labels = input<Record<string, string>>({});
+
+  /** Resolve a button's label: consumer override (via `labels`) or the default. */
+  label(key: string, fallback: string): string {
+    return this.labels()?.[key] ?? fallback;
+  }
+
   @Output() view: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() save: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() create: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() hire: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() workspace: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() update: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() edit: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() delete: WatchedEventEmitter = new WatchedEventEmitter();
@@ -122,6 +136,14 @@ export class DefaultActionsComponent {
 
   onCreate(e) {
     this.create.emit({ event: e });
+  }
+
+  onHire(e) {
+    this.hire.emit({ event: e });
+  }
+
+  onWorkspace(e) {
+    this.workspace.emit({ event: e });
   }
 
   onSearch() {

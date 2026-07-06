@@ -3,10 +3,10 @@
 }
 
 .form-control {
-  background: var(--cui-white);
+  background: var(--ct-surface);
 
   &:hover {
-    background: var(--cui-gray-100);
+    background: var(--ct-surface-2);
   }
 }
 
@@ -74,10 +74,10 @@ label {
     &:has(input:checked) {
       background: var(--cui-primary);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-      color: var(--cui-white);
+      color: var(--ct-on-primary, #fff);
 
       span {
-        color: var(--cui-white);
+        color: var(--ct-on-primary, #fff);
       }
     }
   }

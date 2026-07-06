@@ -6,43 +6,42 @@ import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { RequestCriteria } from '@cartesianui/core';
 import { SearchFieldDescriptor } from '../../models/types';
 import { SelectableControlComponent } from '../../form/control/selectable-control.component';
+import { SelectControlComponent } from '../../form/control/select-control.component';
 import { DatetimeService } from '../../services';
 
 @Component({
   selector: 'search-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, BsDatepickerModule, SelectableControlComponent],
+  imports: [CommonModule, FormsModule, BsDatepickerModule, SelectableControlComponent, SelectControlComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="search-panel-wrapper" *ngIf="visibleFields.length || searchKey">
       <!-- Quick search + filter toggle row (always visible) -->
       <div class="d-flex align-items-center gap-2">
-        <!-- Quick search -->
-        <div *ngIf="searchKey" class="input-group input-group-sm" style="max-width: 280px">
-          <span class="input-group-text bg-white border-end-0">
-            <i class="fas fa-search text-muted"></i>
-          </span>
+        <!-- Quick search — single rounded pill: icon + borderless input -->
+        <label *ngIf="searchKey" class="sp-search">
+          <i class="fas fa-search"></i>
           <input
             type="text"
-            class="form-control border-start-0"
             [placeholder]="searchPlaceholder"
             [(ngModel)]="quickSearchText"
             (keyup.enter)="onQuickSearch()"
             (input)="onQuickSearchInput()"
           />
-        </div>
+        </label>
 
-        <!-- Filter toggle -->
-        <div
+        <!-- Filter toggle — outlined button -->
+        <button
           *ngIf="visibleFields.length"
-          class="search-panel-toggle d-flex align-items-center ms-auto"
+          type="button"
+          class="sp-filters-btn ms-auto"
           (click)="togglePanel()"
         >
-          <i class="fa fa-sliders-h me-1"></i>
+          <i class="fa fa-filter"></i>
           <span>Filters</span>
-          <span *ngIf="activeFilterCount" class="badge bg-primary ms-1">{{ activeFilterCount }}</span>
-          <i class="fa ms-1" [class.fa-chevron-down]="!expanded" [class.fa-chevron-up]="expanded"></i>
-        </div>
+          <span *ngIf="activeFilterCount" class="sp-filters-count">{{ activeFilterCount }}</span>
+          <i class="fa sp-filters-caret" [class.fa-chevron-down]="!expanded" [class.fa-chevron-up]="expanded"></i>
+        </button>
       </div>
 
       <!-- Advanced filters (collapsible) -->
@@ -55,7 +54,7 @@ import { DatetimeService } from '../../services';
               <ng-container *ngIf="!field.type || field.type === 'text'">
                 <input
                   type="text"
-                  class="form-control form-control-sm"
+                  class="form-control"
                   [placeholder]="field.placeholder || field.label || readableName(field.key)"
                   [ngModel]="fieldValues[field.key] || ''"
                   (ngModelChange)="onTextModel(field, $event)"
@@ -66,7 +65,7 @@ import { DatetimeService } from '../../services';
               <ng-container *ngIf="field.type === 'number'">
                 <input
                   type="number"
-                  class="form-control form-control-sm"
+                  class="form-control"
                   [placeholder]="field.placeholder || field.label || readableName(field.key)"
                   [ngModel]="fieldValues[field.key] || ''"
                   (ngModelChange)="onTextModel(field, $event)"
@@ -74,15 +73,20 @@ import { DatetimeService } from '../../services';
               </ng-container>
 
               <!-- Select dropdown -->
+              <!-- Static-option (enum) filter — rendered via the lightweight
+                   themed select-control instead of a native <select> so the
+                   option list matches the app palette (native <option> lists
+                   are OS-rendered and can't be themed). Opens the full list on
+                   click, so it still behaves like a select. -->
               <ng-container *ngIf="field.type === 'select'">
-                <select
-                  class="form-select form-select-sm"
-                  [ngModel]="fieldValues[field.key] || ''"
+                <select-control
+                  [options]="field.options || []"
+                  optionKey="value"
+                  [optionField]="field.optionField || 'name'"
+                  [placeholder]="field.placeholder || field.label || readableName(field.key)"
+                  [ngModel]="fieldValues[field.key] || null"
                   (ngModelChange)="onSelectModel(field, $event)"
-                >
-                  <option value="">{{ field.placeholder || field.label || readableName(field.key) }}</option>
-                  <option *ngFor="let opt of field.options" [value]="opt.value">{{ opt.label || opt.name }}</option>
-                </select>
+                ></select-control>
               </ng-container>
 
               <!-- Entity lookup (selectable-control) -->
@@ -101,7 +105,7 @@ import { DatetimeService } from '../../services';
               <ng-container *ngIf="field.type === 'date'">
                 <input
                   bsDatepicker
-                  class="form-control form-control-sm"
+                  class="form-control"
                   [placeholder]="field.placeholder || field.label || readableName(field.key)"
                   [bsValue]="fieldDateValues[field.key] || null"
                   (bsValueChange)="onDateChange(field, $event)"
@@ -110,7 +114,7 @@ import { DatetimeService } from '../../services';
 
               <!-- Date range picker (bsDaterangepicker) -->
               <ng-container *ngIf="field.type === 'daterange'">
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                   <span class="input-group-text bg-white">
                     <i class="fas fa-calendar-alt text-muted"></i>
                   </span>
@@ -127,7 +131,7 @@ import { DatetimeService } from '../../services';
               <!-- Boolean -->
               <ng-container *ngIf="field.type === 'boolean'">
                 <select
-                  class="form-select form-select-sm"
+                  class="form-select"
                   [ngModel]="fieldValues[field.key] || ''"
                   (ngModelChange)="onSelectModel(field, $event)"
                 >
@@ -139,41 +143,94 @@ import { DatetimeService } from '../../services';
 
             </div>
           </ng-container>
+        </div>
 
-          <!-- Clear all button -->
-          <div class="col-auto d-flex align-items-end" *ngIf="activeFilterCount">
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearAll()">
-              <i class="fa fa-times me-1"></i>Clear
-            </button>
-          </div>
+        <!-- Clear filters — own row, auto-width (sized to content), left-aligned -->
+        <div class="sp-clear-row" *ngIf="activeFilterCount">
+          <button type="button" class="sp-clear-btn" (click)="clearAll()">
+            <i class="fa fa-times"></i>Clear filters
+          </button>
         </div>
       </div>
     </div>
   `,
   styles: [`
     .search-panel-wrapper {
-      border: 1px solid #e0e0e0;
-      border-radius: 0.375rem 0.375rem 0 0;
-      border-bottom: none;
-      background: #fafbfc;
-      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--cui-border-color);
+      border-radius: var(--cui-border-radius-lg) var(--cui-border-radius-lg) 0 0;
+      /* divider between the filter area and the table header (mockup) */
+      border-bottom: 1px solid var(--cui-border-color);
+      background: var(--cui-secondary-bg);
+      padding: 0.75rem 1rem;
     }
 
-    .search-panel-toggle {
+    /* Quick search pill (mockup) — icon + borderless input on white surface */
+    .sp-search {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex: 1;
+      max-width: 430px;
+      margin: 0;
+      padding: 0.625rem 0.85rem;
+      background: var(--ct-surface);
+      border: 1px solid var(--cui-border-color);
+      border-radius: var(--cui-border-radius);
+      color: var(--cui-tertiary-color);
+    }
+    .sp-search i {
+      font-size: 0.85rem;
+    }
+    .sp-search input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      outline: none;
+      font: inherit;
+      font-size: 0.85rem;
+      color: var(--cui-body-color);
+    }
+    .sp-search input::placeholder {
+      color: var(--cui-tertiary-color);
+    }
+    .sp-search:focus-within {
+      border-color: var(--cui-primary);
+    }
+
+    /* Filters toggle (mockup) — outlined button + primary count badge */
+    .sp-filters-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--cui-border-color);
+      border-radius: var(--cui-border-radius);
+      background: var(--ct-surface);
+      color: var(--cui-secondary-color);
+      font-size: 0.8125rem;
+      font-weight: 600;
       cursor: pointer;
       user-select: none;
-      font-size: 0.8rem;
-      color: #6c757d;
-      transition: color 0.15s ease;
+      transition: border-color 0.12s ease, color 0.12s ease;
     }
-
-    .search-panel-toggle:hover {
-      color: #343a40;
+    .sp-filters-btn:hover {
+      border-color: var(--cui-primary);
+      color: var(--cui-body-color);
     }
-
-    .search-panel-toggle .badge {
-      font-size: 0.65rem;
-      vertical-align: middle;
+    .sp-filters-count {
+      display: inline-flex;
+      align-items: center;
+      background: var(--cui-primary);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.05rem 0.45rem;
+      border-radius: var(--cui-border-radius-sm);
+    }
+    .sp-filters-caret {
+      font-size: 0.7rem;
+      opacity: 0.7;
     }
 
     .search-panel-body {
@@ -187,36 +244,43 @@ import { DatetimeService } from '../../services';
       max-height: 300px;
       overflow: visible;
       padding-top: 0.5rem;
-      border-top: 1px solid #e9ecef;
+      border-top: 1px solid var(--cui-border-color);
       margin-top: 0.5rem;
     }
 
     /* Quick search input */
     .search-panel-wrapper .input-group .form-control:focus {
       box-shadow: none;
-      border-color: #86b7fe;
+      border-color: var(--cui-primary);
     }
 
-    /* Match selectable-control height to form-control-sm */
-    :host ::ng-deep selectable-control .lookup-input-wrapper {
-      min-height: 31px !important;
-      font-size: 0.875rem;
-      padding: 0.25rem 0.5rem !important;
-      background: #fff;
-    }
-
-    :host ::ng-deep selectable-control .lookup-input-wrapper input {
-      font-size: 0.875rem;
-    }
-
+    /* selectable-control in filters uses the global input size (no -sm
+       override) so it stays consistent with the other filter inputs. */
     :host ::ng-deep selectable-control .lookup-input-wrapper .badge {
       font-size: 0.75rem;
     }
 
-    /* Clear button */
-    .btn-outline-secondary {
-      font-size: 0.78rem;
-      padding: 0.2rem 0.5rem;
+    /* Clear filters — own row, compact auto-width outlined button (mockup) */
+    .sp-clear-row {
+      margin-top: 0.7rem;
+    }
+    .sp-clear-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: auto;
+      border: 1px solid var(--cui-border-color);
+      border-radius: var(--cui-border-radius);
+      background: transparent;
+      color: var(--cui-secondary-color);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+    }
+    .sp-clear-btn:hover {
+      background: var(--cui-tertiary-bg);
+      color: var(--cui-body-color);
     }
   `]
 })

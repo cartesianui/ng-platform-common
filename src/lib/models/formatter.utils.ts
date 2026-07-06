@@ -228,15 +228,48 @@ function renderMultilineItems(
 
   if (imageItem && imageItem.key) {
     const imageValue = model.getValue(imageItem.key);
-    const imageFn = FormatterRegistry.get('image');
-    const imageHtml = imageFn ? imageFn('dt', imageValue, imageItem, model) : '';
+    const size = imageItem.class ?? '32';
+    let mediaHtml = '';
 
-    if (imageHtml) {
-      return `<div class="d-flex align-items-center gap-2">${imageHtml}<div>${textHtml}</div></div>`;
+    if (imageValue) {
+      // Real image available — render the thumbnail (with hover preview).
+      const imageFn = FormatterRegistry.get('image');
+      mediaHtml = imageFn ? imageFn('dt', imageValue, imageItem, model) : '';
+    } else {
+      // No image — show an initials avatar (primary-soft circle) derived from
+      // the first text item (the name), matching the source design. Replaces
+      // the old grey image placeholder.
+      const nameItem = items.find(
+        (i) => !Array.isArray(i) && !!(i as FormatterOptions).key && (i as FormatterOptions) !== imageItem
+      ) as FormatterOptions | undefined;
+      const nameVal = nameItem ? model.getValue(nameItem.key) : '';
+      mediaHtml = renderInitialsAvatar(nameVal, size);
+    }
+
+    if (mediaHtml) {
+      return `<div class="d-flex align-items-center gap-2">${mediaHtml}<div>${textHtml}</div></div>`;
     }
   }
 
   return textHtml;
+}
+
+/** Initials from a name — "Sarah Johnson" → "SJ", "admin" → "A". */
+function avatarInitials(name: any): string {
+  const s = String(name ?? '').trim();
+  if (!s) return '';
+  const parts = s.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+/** Initials-avatar cell (primary-soft circle) — used by multiline party/user
+ *  cells when no image is present. Token-driven so it adapts light/dark. */
+function renderInitialsAvatar(name: any, size: string | number): string {
+  const initials = avatarInitials(name);
+  if (!initials) return '';
+  return `<span class="dt-cell-avatar dt-cell-avatar-${size}">${initials}</span>`;
 }
 
 /**
