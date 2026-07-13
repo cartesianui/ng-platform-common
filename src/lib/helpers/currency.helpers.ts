@@ -102,23 +102,30 @@ export function resolveLineTax(
   inclusive = false,
   opts?: LineTaxOptions,
 ): LineTaxResult {
-  const base = roundDecimal((Number(unitPrice) || 0) * (Number(qty) || 0) - (Number(discount) || 0));
+  // NOT pre-rounded here — the BE (`ResolveLineTaxTask`) keeps `base`
+  // (and the fixed-amount `fixed`) unrounded all the way through the
+  // calculation and only rounds the final line_total/tax_amount once, at
+  // the very end. Rounding `base` first, as this used to, drifted the FE
+  // preview a few currency units off the BE-persisted snapshot on
+  // fractional qty/unitPrice/discount combinations — reported as "tax is
+  // off by ~5-10".
+  const base = (Number(unitPrice) || 0) * (Number(qty) || 0) - (Number(discount) || 0);
 
   if (opts?.type === 'fixed') {
-    const fixed = roundDecimal((Number(opts.fixedAmount) || 0) * (Number(qty) || 0));
+    const fixed = (Number(opts.fixedAmount) || 0) * (Number(qty) || 0);
     if (inclusive) {
-      return { net: roundDecimal(base - fixed), tax: fixed };
+      return { net: roundDecimal(base - fixed), tax: roundDecimal(fixed) };
     }
-    return { net: base, tax: fixed };
+    return { net: roundDecimal(base), tax: roundDecimal(fixed) };
   }
 
   const rate = Number(taxRate) || 0;
-  if (rate === 0) return { net: base, tax: 0 };
+  if (rate === 0) return { net: roundDecimal(base), tax: 0 };
   if (inclusive) {
     const net = roundDecimal(base / (1 + rate / 100));
     return { net, tax: roundDecimal(base - net) };
   }
-  return { net: base, tax: roundDecimal(base * rate / 100) };
+  return { net: roundDecimal(base), tax: roundDecimal(base * rate / 100) };
 }
 
 export function parseDigitsInfo(digitsInfo?: string): Pick<

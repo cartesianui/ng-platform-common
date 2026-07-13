@@ -151,6 +151,13 @@
           <i class="fa fa-file-export" *ngIf="showIcon()"></i>
           <span *ngIf="showText()">Export</span>
         </button>
+
+        <!-- Consumer-projected custom actions (e.g. a form-specific "Create
+             Invoice" button) — render alongside the fixed named buttons
+             above instead of the caller having to build a separate action
+             row. Purely additive: no consumer projects anything today, so
+             this is a no-op until one does. -->
+        <ng-content></ng-content>
       </div>
     </div>
   </div>

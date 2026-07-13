@@ -1,3 +1,12 @@
+/**
+ * Property stamped onto a repeatable row's own `formGroup` (by
+ * `RepeatableFormBaseComponent`) carrying that row's current array position.
+ * `with-validation` walks a control's `.parent` chain looking for this to
+ * scope server-side `items.<n>.<field>` errors to the row that raised them,
+ * instead of matching every row with a same-named field.
+ */
+export const ROW_INDEX_KEY = '__rowIndex';
+
 export const errorTypes = [
   'required',
   'requireRelative',
