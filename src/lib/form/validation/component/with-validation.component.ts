@@ -2,7 +2,8 @@ import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetecto
 import { ValidateDirective } from '../directive/validate.directive';
 import { ValidationService } from '../validation.service';
 import { HttpErrorService, IError } from '@cartesianui/core';
-import { ValidationErrors } from '@angular/forms';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { ROW_INDEX_KEY } from '../validation.types';
 
 @Component({
     selector: 'with-validation',
@@ -45,6 +46,18 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
     const control = this.validateDirective.ngControl?.control;
     if (control) {
       control.statusChanges.subscribe(() => this.cdr.markForCheck());
+
+      // A server-rejected field must clear on the next edit, not linger
+      // forever — setErrors() only ever adds `serverError` (see below), and
+      // Angular never auto-clears manually-injected custom errors on its
+      // own, so without this a fixed field keeps the whole form permanently
+      // invalid/unsavable.
+      control.valueChanges.subscribe(() => {
+        if (control.errors?.['serverError']) {
+          const { serverError, ...rest } = control.errors;
+          control.setErrors(Object.keys(rest).length ? rest : null);
+        }
+      });
     }
 
     this.errorService.serverErrors$.subscribe((errors) => this.setServerError(errors, this.validateDirective));
@@ -74,7 +87,8 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
     if (!control || !name) {
       return;
     }
-    const fieldErrors = this.resolveFieldErrors(errors, name);
+    const rowIndex = this.findRowIndex(control);
+    const fieldErrors = this.resolveFieldErrors(errors, name, rowIndex);
 
     if (fieldErrors) {
       control.setErrors({
@@ -111,8 +125,23 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
    * Returns the matching messages array (or string) or undefined when
    * neither shape hits.
    */
-  private resolveFieldErrors(errors: IError, name: string): string | string[] | undefined {
+  private resolveFieldErrors(errors: IError, name: string, rowIndex?: number): string | string[] | undefined {
     if (!errors) return undefined;
+
+    if (rowIndex !== undefined) {
+      // This control lives inside a repeatable row (e.g. a line item) —
+      // only accept an error keyed for THIS row's position, such as
+      // `items.0.reasonCode` / `lines.0.amount`. A bare `name` match or
+      // another row's index must NOT apply here, otherwise one line's
+      // error lights up every line that has a same-named field.
+      const rowSuffix = `.${rowIndex}.${name}`;
+      for (const key of Object.keys(errors)) {
+        if (key.endsWith(rowSuffix)) {
+          return errors[key] as string | string[];
+        }
+      }
+      return undefined;
+    }
 
     // Direct match wins — preserves backward-compat for flat-shape APIs.
     if (errors[name] !== undefined) {
@@ -127,6 +156,17 @@ export class WithValidationComponent implements OnInit, AfterContentInit {
       }
     }
 
+    return undefined;
+  }
+
+  /** Walks the control's FormGroup ancestry for the nearest repeatable-row index stamp (see `ROW_INDEX_KEY`). */
+  private findRowIndex(control: AbstractControl | null | undefined): number | undefined {
+    let node: AbstractControl | null | undefined = control;
+    while (node) {
+      const idx = (node as any)[ROW_INDEX_KEY];
+      if (idx !== undefined) return idx;
+      node = node.parent;
+    }
     return undefined;
   }
 

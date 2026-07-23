@@ -7,7 +7,7 @@ import { TimeSincePipe, FormatPipe, RegionalCurrencyPipe } from './pipes';
 // `RegionalCurrencyPipe` is standalone — consumers import it directly
 // from `@cartesianui/common`. Including it in the imports array here
 // re-exports it for module-based consumers.
-import { BusyDirective, AccessibleDirective, DecimalFormatDirective } from './directives';
+import { BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective } from './directives';
 
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
@@ -77,9 +77,10 @@ const COMMON_COMPONENTS = [
     AlertModule.forRoot(),
     NgxDatatableModule,
     RegionalCurrencyPipe,
+    FixedPopupPositionDirective,
   ],
   declarations: [TimeSincePipe, FormatPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
-  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, ...COMMON_COMPONENTS]
+  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, ...COMMON_COMPONENTS]
 })
 export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {

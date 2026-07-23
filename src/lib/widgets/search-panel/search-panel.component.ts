@@ -419,8 +419,11 @@ export class SearchPanelComponent implements OnInit, OnDestroy {
   }
 
   onSelectModel(field: SearchFieldDescriptor, value: string): void {
-    this.fieldValues[field.key] = value || null;
-    this.applyFilter(field, value || null);
+    // NOT `value || null` — that treats a real `false`/0 option value (e.g.
+    // a boolean "Inactive" filter) as "cleared", silently dropping it.
+    const normalized = value === undefined || value === null || (value as any) === '' ? null : value;
+    this.fieldValues[field.key] = normalized;
+    this.applyFilter(field, normalized);
   }
 
   onEntityChange(field: SearchFieldDescriptor, value: any): void {

@@ -5,7 +5,7 @@ import { RepeatableDirective } from './repeatable.directive';
     selector: 'repeatable-form',
     styleUrls: ['./repeatable-from-controls.component.scss'],
     template: `
-    <div *ngFor="let item of internalData; let i = index; trackBy: trackByIndex" class="repeatable-row row mb-2 align-items-stretch">
+    <div *ngFor="let item of internalData; let i = index; trackBy: trackByRowId" class="repeatable-row row mb-2 align-items-stretch">
       <div class="col">
         <ng-container *ngTemplateOutlet="template; context: getContext(item, i)"></ng-container>
       </div>
@@ -48,6 +48,19 @@ export class RepeatableFormControlsComponent<TDataModel> {
   internalData: TDataModel[] = [];
 
   /**
+   * Per-row stable identity, kept in lockstep with `internalData` by our own
+   * add()/remove()/updateItem() methods (updateItem does NOT touch this — the
+   * row's id must survive its value object being replaced on every keystroke).
+   * Only regenerated wholesale when the parent genuinely resets `data`.
+   * Fixes wrong-row deletion: trackBy-by-index made Angular reuse/destroy
+   * child row components by position instead of by logical row, so removing
+   * row N always tore down the *last* DOM row and left the rows after N
+   * showing stale data from the row that was actually removed.
+   */
+  private rowIds: number[] = [];
+  private nextRowId = 0;
+
+  /**
    * Reference to the last array we emitted via `dataChange`.
    * If the parent assigns this same reference (or a clone of internalData) back
    * into `data`, we skip the resync to avoid an echo-storm that destroys + rebuilds
@@ -80,6 +93,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
 
   ngOnInit() {
     this.internalData = [...this.data];
+    this.rowIds = this.internalData.map(() => this.nextRowId++);
   }
 
   ngOnChanges() {
@@ -90,6 +104,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
     }
     // Keep internalData in sync if parent genuinely replaces `data`.
     this.internalData = [...this.data];
+    this.rowIds = this.internalData.map(() => this.nextRowId++);
   }
 
   getContext(item: TDataModel, index: number) {
@@ -100,17 +115,18 @@ export class RepeatableFormControlsComponent<TDataModel> {
     };
   }
 
-  trackByIndex(index: number, item: TDataModel): number {
-    return index;
-    // return (item as any).id;
-  }
+  // Arrow class field, not a prototype method: Angular's *ngFor calls trackBy
+  // as a detached function reference, so a regular method would lose its
+  // `this` binding and `this.rowIds` would be undefined when invoked.
+  trackByRowId = (index: number): number => this.rowIds[index];
 
   updateItemAtIndex(index: number, value: any): void {
     this.updateItem(value, index); // call your existing logic
   }
 
   updateItem(value: TDataModel, index: number) {
-    // Immutable replacement
+    // Immutable replacement — rowIds is untouched so the row keeps its
+    // identity even though `value` is a new object reference.
     const newData = this.internalData.map((item, i) => (i === index ? value : item));
     this.internalData = newData;
     this.lastEmitted = newData;
@@ -121,6 +137,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
     const newItem = {} as TDataModel;
     const newData = [...this.internalData, newItem];
     this.internalData = newData;
+    this.rowIds = [...this.rowIds, this.nextRowId++];
     this.lastEmitted = newData;
     this.dataChange.emit(newData);
   }
@@ -128,6 +145,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
   remove(index: number) {
     const newData = this.internalData.filter((_, i) => i !== index);
     this.internalData = newData;
+    this.rowIds = this.rowIds.filter((_, i) => i !== index);
     this.lastEmitted = newData;
     this.dataChange.emit(newData);
   }
@@ -145,8 +163,12 @@ export class RepeatableFormControlsComponent<TDataModel> {
   // ✅ Fixes:
   // - Use `trackBy` in *ngFor to stabilize DOM reuse, OR
   // - Store a stable identifier (e.g. item.id) and map directives by that.
-
-  // ✅ Used: used first way added trackByIndex to solve the order problem
+  //
+  // `trackByRowId` above now does the latter for the *ngFor itself, but this
+  // QueryList-index lookup is a separate mechanism and can still drift from
+  // `internalData` order under add/remove — not exercised by current QA
+  // findings (showSaveButton is off wherever this bug was reported), left
+  // as-is.
   save(index: number) {
     const directive = this.itemDirectives?.toArray()[index];
     if (directive?.componentInstance?.save) {

@@ -81,7 +81,16 @@ export function formatForForm(
   try {
     let value = model.getValue(col.dataKey || col.key);
 
-    if (value === null && col.defaultValue !== undefined) {
+    // A freshly-constructed entity's field is `undefined` (TS class-field
+    // declared but never assigned), not `null` — a boolean/toggle field
+    // with `defaultValue` then fell through to `''` below instead of the
+    // declared default, so the switch rendered "off" but the control's
+    // real value was an empty string, which `Validators.required` rejects.
+    // The form only became valid once the user manually touched the
+    // toggle. Treat `undefined` the same as `null` here, consistent with
+    // every other null-check in this file (formatForDb, the formatter
+    // branch below).
+    if ((value === null || value === undefined) && col.defaultValue !== undefined) {
       value = resolveDefaultValue(col.defaultValue);
     }
 

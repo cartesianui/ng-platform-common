@@ -46,11 +46,12 @@ import {
 } from 'rxjs';
 import { AppConfig, ObjectUtils, RequestCriteria, unwrapFractalData } from '@cartesianui/core';
 import { isUuid, isValidInteger } from '../../helpers';;
+import { FixedPopupPositionDirective } from '../../directives';
 
 @Component({
   selector: 'selectable-control',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TypeaheadModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, TypeaheadModule, HttpClientModule, FixedPopupPositionDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
