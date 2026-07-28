@@ -76,25 +76,43 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
   //   return this.entityConstructor.toForm(entity);
   // }
 
+  /** The element currently shown busy by `handleFormBusyState`, if any. */
+  private busyTarget: HTMLElement | null = null;
+
   protected handleFormBusyState(state: RequestState, element?: HTMLElement) {
     const defaultElement = this.formContainer?.nativeElement;
     const target = element ?? defaultElement;
 
-    // console.log('⚙️ [BusyState] Handling state:', state.status, '→', state);
-
+    // Busy iff a request is genuinely in flight. Anything else clears it.
+    //
+    // This used to test `started` / `completed` / `failed` as three separate
+    // ifs, which left a fourth state unhandled: `requestDefault`
+    // ({started:false, completed:false, failed:false}) — the value
+    // `clearRequestState()` resets to. Components run two effects off the same
+    // request: one calling this method, one that reacts to `*Completed()` and
+    // immediately calls `clearRequestState()`. When the latter won the race,
+    // this method's next run observed the all-false default, matched none of
+    // the three branches, and never called `clearBusy()` — so the spinner sat
+    // there forever even though the save had succeeded. That is the
+    // "spinner never goes away after editing" report, and because it lives in
+    // this shared base it affected every form in every app, not just EHR.
+    //
+    // Treating "not started" as "not busy" makes the handler idempotent and
+    // order-independent: whichever effect runs first, the terminal state
+    // always clears.
+    // Only ever clears a target this method actually set busy, so a form's
+    // first render (state = default, nothing in flight) does not fire a
+    // stray `clearBusy` at the vendor UI layer, and a `target` that changed
+    // between calls still gets released.
     if (state.started) {
-      console.log('🚀 Request started — setting busy state on:', target);
       this.ui.setBusy(target);
+      this.busyTarget = target ?? null;
+      return;
     }
 
-    if (state.completed) {
-      console.log('✅ Request completed — clearing busy state on:', target);
-      this.ui.clearBusy(target);
-    }
-
-    if (state.failed) {
-      console.log('❌ Request failed — clearing busy state on:', target);
-      this.ui.clearBusy(target);
+    if (this.busyTarget) {
+      this.ui.clearBusy(this.busyTarget);
+      this.busyTarget = null;
     }
   }
 
