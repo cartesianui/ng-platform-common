@@ -396,7 +396,18 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                   }
                 })
               );
-          })
+          }),
+          // ngx-bootstrap's TypeaheadContainerComponent updates its matches
+          // (and calls change detection) synchronously inside this
+          // observable's subscribe callback. The `tap` above only defers
+          // OUR OWN `items` signal update — the emission ngx-bootstrap
+          // itself receives is not delayed by it, so an HTTP response that
+          // lands mid change-detection pass hands the container a new
+          // array before Angular's current check has finished, tripping
+          // NG0100. Rescheduling the emission onto a microtask sidesteps
+          // that: by the time ngx-bootstrap sees it, the in-flight CD pass
+          // has already completed.
+          observeOn(asapScheduler)
         );
       } else if (dataValue) {
         // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
