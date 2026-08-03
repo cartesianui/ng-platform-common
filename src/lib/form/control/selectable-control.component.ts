@@ -97,12 +97,30 @@ import { FixedPopupPositionDirective } from '../../directives';
           {{ getOptionLabel(computedValues()[0]) }}
         </span>
       </div>
+
+      <!--
+        A failed lookup must NOT look like an empty one. Before this existed a
+        403 rendered as a silent empty dropdown, which is how QA F1 (a missing
+        list:any:service grant) was reported as "service search returns []".
+        role=alert so screen readers announce it rather than leaving the user
+        with a dropdown that simply never opens.
+      -->
+      <div *ngIf="loadError()" class="lookup-error small mt-1" role="alert">
+        {{ loadError() }}
+      </div>
     </div>
   `,
   styles: [
     `
       .selectable-control {
         width: 100%;
+      }
+
+      /* Themed danger text — matches Bootstrap's .invalid-feedback colour
+         without borrowing that class, which is reserved for form-validation
+         state and would be misread by anything inspecting validity. */
+      .lookup-error {
+        color: var(--ct-form-invalid-color, var(--bs-danger, #dc3545));
       }
 
       /* Match the global .form-control input style (white surface, light
@@ -262,6 +280,22 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   // --- Internal state ---
   items = signal<T[]>([]); // Available option (don't show selected one)
 
+  /**
+   * Why a search failed, or null when it did not.
+   *
+   * Until 2026-08-01 the search `error` handler simply did `items.set([])`, so a
+   * 403 / 500 / dropped connection was rendered as an EMPTY RESULT LIST —
+   * indistinguishable from "nothing matched". That is not a cosmetic problem:
+   * QA F1 ("Care: Queue Entry service search returns []") was reported as a
+   * search bug and was actually a missing `list:any:service` grant. The API had
+   * answered 403 the whole time; this control turned it into "no results", and
+   * the real cause took a permissions investigation to find.
+   *
+   * "You do not have access" and "there is nothing here" must not look the
+   * same, or the next grant gap costs the same investigation.
+   */
+  loadError = signal<string | null>(null);
+
   // used with url
   items$: Observable<any>;
 
@@ -373,6 +407,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                     // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
                     // This prevents typeahead component from detecting changes during same CD cycle
                     setTimeout(() => {
+                      this.loadError.set(null);
                       this.items.set(items ?? []);
                       if (this.pendingRawValue != null) {
                         // Resolve pending once we have items/options (edit prefill)
@@ -388,9 +423,19 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                       this.cdr.markForCheck();
                     }, 0);
                   },
-                  error: () => {
+                  error: (err: any) => {
+                    // Distinguish "failed" from "nothing matched" — see
+                    // `loadError`. The interceptor rethrows either a
+                    // CartesianResponse or an HttpResponse clone; both carry
+                    // `status`.
+                    const status = err?.status ?? err?.statusCode ?? null;
                     setTimeout(() => {
                       this.items.set([]);
+                      this.loadError.set(
+                        status === 403
+                          ? 'You do not have permission to view these options.'
+                          : 'Could not load options. Please try again.'
+                      );
                     }, 0);
                     this.cdr.markForCheck();
                   }
