@@ -114,8 +114,10 @@ export class EntitySandbox<T> extends Sandbox {
     this.store.dispatch(this.config.actions.getAll({ criteria }));
   }
 
-  getById(id: string): void {
-    this.store.dispatch(this.config.actions.getById({ id }));
+  /** `includes` is optional — the effect already reads it off the action
+   *  (see EntityEffect.getById$) but no caller could reach it until now. */
+  getById(id: string, includes?: string): void {
+    this.store.dispatch(this.config.actions.getById({ id, includes }));
   }
 
   select(entity: T): void {

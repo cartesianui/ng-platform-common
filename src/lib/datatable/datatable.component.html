@@ -57,15 +57,20 @@
 
       <!-- Default Cell Rendering -->
       <ng-template #defaultCell>
-        <!-- Link Cell -->
+        <!-- Link Cell — a plain clickable span, NOT a real <a>: the cell's
+             formatted content can carry a nested copy-icon trigger (grouped
+             into a multiline stack), and an interactive element (role=button)
+             nested inside a real <a> is invalid HTML with flaky
+             keyboard/focus behavior. Click is delegated the same way either
+             way (see onLinkCellClick) — only the wrapping tag changes. -->
         <ng-container *ngIf="col?.opt?.link === true; else normalCell">
-          <a href="javascript:;" (click)="onEditInternal(row)" [innerHTML]="row.dtFormatted(col)"></a>
+          <span class="dt-link-cell" (click)="onLinkCellClick($event, row)" [innerHTML]="row.dtFormatted(col)"></span>
         </ng-container>
 
         <!-- Normal Cell -->
         <ng-template #normalCell>
           <ng-container *ngIf="col?.opt?.formatter?.displayAs || col?.opt?.formatter?.type === 'multiline' || isCustomFormatter(col); else plainCell">
-            <span [innerHTML]="row.dtFormatted(col)"></span>
+            <span [innerHTML]="row.dtFormatted(col)" (click)="onCellClick($event)"></span>
           </ng-container>
           <ng-template #plainCell>{{ row.dtFormatted(col) }}</ng-template>
         </ng-template>

@@ -72,6 +72,9 @@ export type FormatterOptions = {
   // Image-formatter-only options (type: 'image')
   preview?: boolean;        // Enable hover preview (default: true)
   previewSize?: 'xs' | 'passport' | 'avatar' | 'small' | 'medium' | 'large' | 'product';  // Preview preset (default: 'medium')
+  // Copy-formatter-only options (type: 'copy')
+  length?: number;      // Truncate displayed text to this many chars + '…'; the full value is still what gets copied.
+  showValue?: boolean;  // false to render icon-only, no value text (default: true) — for grouping into another column's stack.
 }
 
 export type FieldDescriptor = {

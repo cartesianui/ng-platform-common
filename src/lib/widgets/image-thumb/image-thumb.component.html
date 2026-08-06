@@ -10,10 +10,10 @@
     @if (src) {
       <img [src]="src" [alt]="alt" />
       @if (canPreview() && previewMode !== 'none') {
-        <span class="image-thumb-magnifier"><i class="fa fa-search-plus"></i></span>
+        <span class="image-thumb-magnifier"><i class="fa-solid fa-search-plus"></i></span>
       }
     } @else if (showFallback) {
-      <span class="image-thumb-placeholder"><i class="fa fa-image"></i></span>
+      <span class="image-thumb-placeholder"><i class="fa-solid fa-image"></i></span>
     }
   </button>
 
@@ -44,7 +44,7 @@
        (keydown.escape)="closeLightbox($event)"
        tabindex="0">
     <button type="button" class="image-thumb-lightbox-close" title="Close" (click)="closeLightbox($event)">
-      <i class="fa fa-times"></i>
+      <i class="fa-solid fa-times"></i>
     </button>
     <img [src]="src" [alt]="alt" (click)="$event.stopPropagation()" />
   </div>

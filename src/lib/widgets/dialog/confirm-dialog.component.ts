@@ -43,10 +43,10 @@ export class ConfirmDialogComponent {
 
   protected get iconClass(): string {
     switch (this.kind) {
-      case 'success': return 'fa fa-check-circle';
-      case 'warning': return 'fa fa-exclamation-triangle';
-      case 'danger': return 'fa fa-exclamation-circle';
-      default: return 'fa fa-info-circle';
+      case 'success': return 'fa-solid fa-check-circle';
+      case 'warning': return 'fa-solid fa-exclamation-triangle';
+      case 'danger': return 'fa-solid fa-exclamation-circle';
+      default: return 'fa-solid fa-info-circle';
     }
   }
 

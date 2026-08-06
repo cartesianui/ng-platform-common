@@ -37,7 +37,7 @@ import { DatetimeService } from '../../services';
           class="sp-filters-btn ms-auto"
           (click)="togglePanel()"
         >
-          <i class="fa fa-filter"></i>
+          <i class="fa-solid fa-filter"></i>
           <span>Filters</span>
           <span *ngIf="activeFilterCount" class="sp-filters-count">{{ activeFilterCount }}</span>
           <i class="fa sp-filters-caret" [class.fa-chevron-down]="!expanded" [class.fa-chevron-up]="expanded"></i>
@@ -148,7 +148,7 @@ import { DatetimeService } from '../../services';
         <!-- Clear filters — own row, auto-width (sized to content), left-aligned -->
         <div class="sp-clear-row" *ngIf="activeFilterCount">
           <button type="button" class="sp-clear-btn" (click)="clearAll()">
-            <i class="fa fa-times"></i>Clear filters
+            <i class="fa-solid fa-times"></i>Clear filters
           </button>
         </div>
       </div>

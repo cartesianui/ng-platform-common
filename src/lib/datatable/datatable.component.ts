@@ -44,6 +44,11 @@ export class AppDatatableComponent {
   @Output() sortChange = new EventEmitter<any>();
   @Output() editClick = new EventEmitter<any>();
   @Output() detailToggle = new EventEmitter<any>();
+  // Fires when a `copy`-formatted cell (see FormatterRegistry 'copy') is
+  // clicked, after the value has already been written to the clipboard —
+  // purely informational, for callers that want to layer a toast on top of
+  // the built-in checkmark feedback.
+  @Output() copyClick = new EventEmitter<string>();
 
   // === Detail Template (passed as TemplateRef input) ===
   @Input() detailTemplate: TemplateRef<any> | null = null;
@@ -74,6 +79,51 @@ export class AppDatatableComponent {
 
   onDetailToggleInternal(event: any): void {
     this.detailToggle.emit(event);
+  }
+
+  // A `copy`-formatted cell is plain [innerHTML] (Angular's sanitizer strips
+  // any `onclick=` we'd try to bake in), so the actual clipboard write is
+  // wired here via delegation: the icon/text the formatter renders carries
+  // a `.dt-copy` trigger, and any click inside the cell bubbles up to this
+  // listener on the wrapping <span>.
+  onCellClick(event: MouseEvent): void {
+    this.tryCopyFromEvent(event);
+  }
+
+  // The 'link' column variant renders the same [innerHTML] inside a
+  // clickable wrapper whose own click opens the edit form — a copy icon can
+  // live inside that same cell (e.g. grouped into the Name column's
+  // multiline stack), so this checks for the copy trigger FIRST and only
+  // falls through to the edit click when the click wasn't on it.
+  onLinkCellClick(event: MouseEvent, row: any): void {
+    if (this.tryCopyFromEvent(event)) return;
+    this.onEditInternal(row);
+  }
+
+  /** @returns true if the click was on a copy trigger (and was handled). */
+  private tryCopyFromEvent(event: MouseEvent): boolean {
+    const trigger = (event.target as HTMLElement)?.closest('.dt-copy') as HTMLElement | null;
+    if (!trigger) return false;
+
+    // The full value lives in a plain text node (`.dt-copy-value`), not an
+    // attribute — Angular's [innerHTML] sanitizer drops non-allowlisted
+    // attributes like `data-copy-value` silently (confirmed live: `class`/
+    // `role`/`tabindex`/`title` survive, `data-*` does not), but never
+    // touches text content.
+    const value = trigger.querySelector('.dt-copy-value')?.textContent?.trim();
+    if (!value) return false;
+
+    event.stopPropagation();
+    event.preventDefault();
+    navigator.clipboard?.writeText(value);
+    this.copyClick.emit(value);
+
+    // CSS-only checkmark + "Copied!" bubble (see .dt-copy in
+    // _datatable.scss) — no change detection needed, this is a raw DOM node
+    // inside innerHTML.
+    trigger.classList.add('dt-copy--done');
+    window.setTimeout(() => trigger.classList.remove('dt-copy--done'), 1200);
+    return true;
   }
 
   // === Public Methods ===

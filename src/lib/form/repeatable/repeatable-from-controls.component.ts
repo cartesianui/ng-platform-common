@@ -12,18 +12,18 @@ import { RepeatableDirective } from './repeatable.directive';
 
       <div class="repeatable-row__actions col-auto d-flex flex-column justify-content-center gap-2">
         <button *ngIf="showSaveButton" type="button" class="btn btn-success btn-sm repeatable-row__save" (click)="save(i)" title="Save">
-          <i class="fa fa-save"></i>
+          <i class="fa-solid fa-save"></i>
         </button>
 
         <button type="button" class="btn btn-danger btn-sm repeatable-row__remove" (click)="remove(i)" title="Remove">
-          <i class="fa fa-trash"></i>
+          <i class="fa-solid fa-trash"></i>
         </button>
       </div>
     </div>
 
     <div class="repeatable-add">
       <button type="button" class="btn repeatable-add__btn" (click)="add()">
-        <i class="fa fa-plus"></i>
+        <i class="fa-solid fa-plus"></i>
         <span *ngIf="addLabel" class="repeatable-add__label">{{ addLabel }}</span>
       </button>
     </div>

@@ -118,7 +118,7 @@ export function formatMultiline(
  *     <span class="dt-tip-content">{html}</span>
  *     <button class="dt-tip-trigger" type="button" tabindex="0"
  *             aria-label="{label or 'Show details'}">
- *       <i class="fa fa-info-circle" aria-hidden="true"></i>
+ *       <i class="fa-solid fa-info-circle" aria-hidden="true"></i>
  *     </button>
  *     <span class="dt-tip-bubble" role="tooltip">
  *       <span class="dt-tip-bubble-label">{label}</span>  ← if set
@@ -161,7 +161,7 @@ export function wrapWithTooltip(
     `<span class="dt-tip dt-tip--${theme}">` +
       `<span class="dt-tip-content">${html}</span>` +
       `<button class="dt-tip-trigger" type="button" tabindex="0" aria-label="${a11yLabel}">` +
-        `<i class="fa ${iconClass}" aria-hidden="true"></i>` +
+        `<i class="fa-solid ${iconClass}" aria-hidden="true"></i>` +
       `</button>` +
       `<span class="dt-tip-bubble" role="tooltip">` +
         (label ? `<span class="dt-tip-bubble-label">${label}</span>` : '') +
@@ -494,7 +494,7 @@ FormatterRegistry.register('image', (_target, value, formatter) => {
   const shape = formatter?.displayAs === 'badge' ? 'rounded-circle' : 'rounded';
 
   if (!value) {
-    return `<span class="dt-cell-img-placeholder dt-cell-img-${size} ${shape}"><i class="fa fa-image"></i></span>`;
+    return `<span class="dt-cell-img-placeholder dt-cell-img-${size} ${shape}"><i class="fa-solid fa-image"></i></span>`;
   }
 
   const previewEnabled = formatter?.preview !== false;
@@ -507,5 +507,47 @@ FormatterRegistry.register('image', (_target, value, formatter) => {
   return `<span class="dt-cell-img-trigger dt-cell-img-preview-${previewSize}">`
     + `<img src="${value}" alt="" width="${size}" height="${size}" class="dt-cell-img ${shape}" loading="lazy" />`
     + `<span class="dt-cell-img-preview"><img src="${value}" alt="" loading="lazy" /></span>`
+    + `</span>`;
+});
+
+/**
+ * Copy-to-clipboard formatter — renders the value (optionally truncated)
+ * next to a copy icon. The actual clipboard write happens in
+ * `AppDatatableComponent.tryCopyFromEvent` via delegated click on `.dt-copy`.
+ *
+ * The full value to copy lives in a `.dt-copy-value` text node, NOT an
+ * attribute: `[innerHTML]` runs through Angular's DomSanitizer, which only
+ * allows a fixed attribute allowlist (class/role/tabindex/title/aria-* — all
+ * confirmed present in a live-rendered cell) and silently drops anything else,
+ * including `data-*` custom attributes. Plain text content is never
+ * sanitized, so that's the one place a value is guaranteed to survive.
+ *
+ * Usage in model meta — standalone column:
+ *   { key: 'id', label: 'ID', opt: { formatter: { type: 'copy', length: 8 } } }
+ *
+ * Or as an icon-only trigger grouped into another column's `multiline`
+ * stack, copying a DIFFERENT field than what's displayed (each item picks
+ * its own value via its own `key` — this one just happens to render nothing
+ * but the icon):
+ *   items: [[{ key: 'name' }, { key: 'id', type: 'copy', showValue: false }]]
+ *
+ * Options:
+ *   length:    truncate the DISPLAYED text to this many chars + '…' (the
+ *              full value is still what gets copied). Omit to show it in full.
+ *   showValue: false to render only the icon, no value text (default: true).
+ */
+FormatterRegistry.register('copy', (_target, value, formatter) => {
+  if (value === null || value === undefined || value === '') return '';
+
+  const full = String(value);
+  const length = (formatter as any)?.length as number | undefined;
+  const showValue = (formatter as any)?.showValue !== false;
+  const display = length && full.length > length ? `${full.slice(0, length)}…` : full;
+
+  return `<span class="dt-copy" role="button" tabindex="0" title="Click to copy">`
+    + (showValue ? `<code class="dt-copy-text">${display}</code>` : '')
+    + `<span class="dt-copy-value">${full}</span>`
+    + `<i class="fa-regular fa-copy dt-copy-icon" aria-hidden="true"></i>`
+    + `<i class="fa-solid fa-check dt-copy-icon-check" aria-hidden="true"></i>`
     + `</span>`;
 });
