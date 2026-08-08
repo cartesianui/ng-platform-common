@@ -406,7 +406,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                   next: (items) => {
                     // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
                     // This prevents typeahead component from detecting changes during same CD cycle
-                    setTimeout(() => {
+                    this.defer(() => {
                       this.loadError.set(null);
                       this.items.set(items ?? []);
                       if (this.pendingRawValue != null) {
@@ -421,7 +421,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                       // branch then clears `searchControl` — wiping the text
                       // the user is actively typing.
                       this.cdr.markForCheck();
-                    }, 0);
+                    });
                   },
                   error: (err: any) => {
                     // Distinguish "failed" from "nothing matched" — see
@@ -429,14 +429,14 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
                     // CartesianResponse or an HttpResponse clone; both carry
                     // `status`.
                     const status = err?.status ?? err?.statusCode ?? null;
-                    setTimeout(() => {
+                    this.defer(() => {
                       this.items.set([]);
                       this.loadError.set(
                         status === 403
                           ? 'You do not have permission to view these options.'
                           : 'Could not load options. Please try again.'
                       );
-                    }, 0);
+                    });
                     this.cdr.markForCheck();
                   }
                 })
@@ -456,18 +456,18 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         );
       } else if (dataValue) {
         // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
-        setTimeout(() => {
+        this.defer(() => {
           this.items.set(dataValue ?? []);
           // If we already have value stored, ensure `selected` is resolved from those options
           if (this.value() != null) {
             this.setResolvedValue(this.value());
           }
           this.cdr.markForCheck();
-        }, 0);
+        });
       } else {
-        setTimeout(() => {
+        this.defer(() => {
           this.items.set([]);
-        }, 0);
+        });
       }
     });
 
@@ -619,7 +619,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
           if (!fetched.length) return;
 
-          setTimeout(() => {
+          this.defer(() => {
             // Merge with anything already in items (e.g. options pre-loaded).
             const existing = this.items() ?? [];
             const merged = [...existing];
@@ -633,7 +633,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
             this.setResolvedValue(ids);
             this.pendingRawValue = null;
             this.cdr.markForCheck();
-          }, 0);
+          });
         },
         error: () => {
           this.cdr.markForCheck();
@@ -680,7 +680,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
     const preloaded = this.findPreloadedById(id);
     if (preloaded) {
       const key = this.optionKey() as string;
-      setTimeout(() => {
+      this.defer(() => {
         const existing = this.items() ?? [];
         if (!existing.some((m: any) => m?.[key] === id)) {
           this.items.set([...existing, preloaded]);
@@ -689,7 +689,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
         this.pendingRawValue = null;
         this.lastFetchedId = id;
         this.cdr.markForCheck();
-      }, 0);
+      });
       return;
     }
 
@@ -718,14 +718,14 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
             if (item) {
               // Defer signal update to avoid ExpressionChangedAfterItHasBeenCheckedError
-              setTimeout(() => {
+              this.defer(() => {
                 this.items.set([item]);
                 this.setResolvedValue(id);
                 this.pendingRawValue = null;
                 // Only now is it safe to mark this id as resolved.
                 this.lastFetchedId = id;
                 this.cdr.markForCheck();
-              }, 0);
+              });
             }
           },
           error: () => {
@@ -778,10 +778,10 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
           const newSelection = this.multi() ? resolved : resolved[0] ?? null;
           if (JSON.stringify(prevSelection) !== JSON.stringify(newSelection)) {
             // Defer to next CD cycle to avoid ExpressionChangedAfterItHasBeenCheckedError
-            setTimeout(() => {
+            this.defer(() => {
               this.entity.set(newSelection);
               this.entityChange.emit(newSelection);
-            }, 0);
+            });
           }
         } catch {
           // ignore
@@ -794,7 +794,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
     // Defer signal updates and emissions to next change detection cycle
     // This prevents ExpressionChangedAfterItHasBeenCheckedError when used in forms with effects
-    setTimeout(() => {
+    this.defer(() => {
       // Normalize & store the key(s) in `value`
       this.value.set(value);
       this.valueChange.emit(value);
@@ -826,7 +826,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
       // ensure UI updates under OnPush
       this.cdr.markForCheck();
-    }, 0);
+    });
   }
 
   private setResolvedValue(value: any): void {
@@ -836,19 +836,19 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
 
     if (value == null || (Array.isArray(value) && value.length === 0)) {
       // Clear both - defer to avoid CD errors
-      setTimeout(() => {
+      this.defer(() => {
         this.value.set(null);
         this.entity.set(null);
         this.valueChange.emit(null);
         this.entityChange.emit(null);
         this.searchControl.setValue('', { emitEvent: false });
         this.cdr.markForCheck();
-      }, 0);
+      });
       return;
     }
 
     // Defer all signal updates and emissions to avoid ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
+    this.defer(() => {
       if (this.multi()) {
         // Expecting array or single -> treat as array of keys or objects
         const resolvedItems = this.resolveItemsFromValue(value);
@@ -917,7 +917,7 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
       }
 
       this.cdr.markForCheck();
-    }, 0);
+    });
   }
 
   // Resolve item objects from a provided value (value can be keys or full item objects)
@@ -1123,7 +1123,47 @@ export class SelectableControlComponent<T = any> implements OnDestroy, AfterView
   }
 
   ngOnDestroy(): void {
+    // Set BEFORE the rest so any already-queued deferred callback bails out.
+    this.destroyed = true;
+
+    // Cancel work deferred with setTimeout. Several paths defer signal writes
+    // and output emissions by a tick to avoid
+    // ExpressionChangedAfterItHasBeenCheckedError; if the host destroys this
+    // control in between — e.g. a payment form clearing a value and then
+    // swapping an `@if` branch — the timer still fires and emits on a dead
+    // OutputRef, producing "NG0953: Unexpected emit for destroyed OutputRef".
+    for (const id of this.deferredTimers) {
+      clearTimeout(id);
+    }
+    this.deferredTimers.length = 0;
+
     this.subs.unsubscribe();
     this.lastFetchedId = null;
+  }
+
+  /** True once ngOnDestroy has run; deferred callbacks check this before emitting. */
+  private destroyed = false;
+
+  /** Pending `defer()` timer ids, cleared on destroy. */
+  private readonly deferredTimers: any[] = [];
+
+  /**
+   * Run `fn` on the next tick, but never after this component is destroyed.
+   *
+   * Replaces bare `setTimeout` for anything that writes signals or emits
+   * outputs. The deferral itself is deliberate (see ngOnDestroy); what was
+   * missing was cancelling it.
+   */
+  private defer(fn: () => void): void {
+    // The one place a real setTimeout belongs — every other deferral in this
+    // component routes through here so it can be cancelled on destroy.
+    const id = setTimeout(() => {
+      const i = this.deferredTimers.indexOf(id);
+      if (i > -1) this.deferredTimers.splice(i, 1);
+      if (this.destroyed) return;
+      fn();
+    }, 0);
+
+    this.deferredTimers.push(id);
   }
 }
