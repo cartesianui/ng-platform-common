@@ -163,3 +163,35 @@ export function formatPrice(
     maximumFractionDigits: 2,
   }).format(n);
 }
+/**
+ * Drop line rows the operator never actually filled in.
+ *
+ * QA Q6-B7/B9. `repeatable-form`'s "Add item" button pushes a literal empty
+ * object into the row array and emits it to the parent immediately — the row
+ * has to exist before it can be typed into. Every document form then posts
+ * `entity.items = this.items` verbatim, so an untouched row goes to the server
+ * as `{}` and comes back rejected:
+ *
+ *     items.1.sku_id     The items.1.sku_id field is required.
+ *     items.1.quantity   The items.1.quantity field is required.
+ *     items.1.unit_cost  The items.1.unit_cost field is required.
+ *
+ * Which reads to the operator as "it flagged fields I never touched", and
+ * re-saving fails identically because the phantom row is still there. The
+ * server was right all along — it was being sent a blank line.
+ *
+ * **Only ENTIRELY empty rows are dropped.** A row with even one value set is a
+ * line the operator started, and it must still fail validation rather than
+ * vanish silently — dropping it would hide a real mistake, which is worse than
+ * the error message.
+ *
+ * `0` and `false` count as values; only null/undefined/'' are treated as empty,
+ * so a legitimate zero quantity or an unticked flag never makes a row look
+ * untouched.
+ */
+export function dropEmptyRows<T extends Record<string, any>>(rows: readonly T[] | null | undefined): T[] {
+  return (rows ?? []).filter((row) => {
+    if (row === null || row === undefined) return false;
+    return Object.values(row).some((v) => v !== null && v !== undefined && v !== '');
+  });
+}
