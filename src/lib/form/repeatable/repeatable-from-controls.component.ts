@@ -1,5 +1,6 @@
 import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, QueryList, ContentChildren, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { RepeatableDirective } from './repeatable.directive';
+import { ROW_VALID_KEY } from '../validation/validation.types';
 
 @Component({
     selector: 'repeatable-form',
@@ -134,7 +135,23 @@ export class RepeatableFormControlsComponent<TDataModel> {
   }
 
   add() {
+    // QA Q6-B7/B9 — mark the fresh row INCOMPLETE up front.
+    //
+    // This row is created here, in the container, and handed to the parent
+    // before any row component has rendered — so nothing has run
+    // `emitChange()` on it yet and it carries no validity marker. Without
+    // this stamp `firstIncompleteRowIndex` sees `undefined`, reads it as
+    // "not known to be invalid", and lets a blank line through to the API.
+    //
+    // Rows arriving from the server are deliberately left unmarked and are
+    // treated as complete: they were persisted, so they validated once.
     const newItem = {} as TDataModel;
+    Object.defineProperty(newItem, ROW_VALID_KEY, {
+      value: false,
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    });
     const newData = [...this.internalData, newItem];
     this.internalData = newData;
     this.rowIds = [...this.rowIds, this.nextRowId++];

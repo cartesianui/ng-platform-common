@@ -56,3 +56,23 @@ export const ERROR_MESSAGES: { [key: string]: (...args: any) => string } = {
   equalTo: (formControlName, message) => message ?? `${formControlName} does not match.`,
   serverError: (formControlName, message) => message ?? `${formControlName} was rejected by the server.`
 };
+
+/**
+ * Non-enumerable marker set on each emitted repeatable row, carrying that
+ * row's own FormGroup validity. Lets a parent document refuse to submit while
+ * a line is incomplete — the parent's own `formGroup.valid` cannot see into
+ * the row components. Non-enumerable so it never reaches the request body.
+ */
+export const ROW_VALID_KEY = '__rowValid';
+
+/**
+ * Index of the first line the operator has started but not finished, or -1
+ * when every row is complete.
+ *
+ * Rows that are entirely untouched count as incomplete too: an "Add item"
+ * click that was never filled in should be completed or removed, not silently
+ * discarded behind the operator's back.
+ */
+export function firstIncompleteRowIndex(rows: readonly any[] | null | undefined): number {
+  return (rows ?? []).findIndex((row) => row?.[ROW_VALID_KEY] === false);
+}
