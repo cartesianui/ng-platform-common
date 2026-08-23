@@ -28,3 +28,16 @@ export const CancellationFamilyValueMap = {
   cancelled:  { label: CancellationFamilyBadges.cancelled.label,  color: CancellationFamilyBadges.cancelled.color },
   superseded: { label: CancellationFamilyBadges.superseded.label, color: CancellationFamilyBadges.superseded.color },
 } as const;
+
+/**
+ * The OPEN-cancellation marker a listing row carries (`cancellation_state`
+ * from the server: 'stuck' | 'running' | null). Icon only, beside the document
+ * number, grouped with it in the model's multiline column; null renders
+ * nothing. The details — which step, why, Retry — are on the document's edit
+ * screen, which the row click opens; the icon just says "look here".
+ * (valueMap string entries are rendered as HTML by the cell formatter.)
+ */
+export const CancellationOpenStateValueMap: Record<string, string> = {
+  stuck:   '<i class="fa-solid fa-triangle-exclamation text-danger" title="Cancellation stuck — open to retry"></i>',
+  running: '<i class="fa-solid fa-spinner fa-spin text-warning" title="Cancelling…"></i>',
+};
