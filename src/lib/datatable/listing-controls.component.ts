@@ -95,6 +95,18 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
     // this.list();
   }
 
+  /**
+   * A listing's resting sort — applied only when the URL carried none, so a
+   * user's chosen sort (or a shared link) still wins. Call it right after
+   * `initCriteria()`. Billing listings rest on newest-document-first
+   * (2026-08-23: Bills and Payments arrived oldest-first, in insertion order).
+   */
+  protected applyDefaultOrder(column: string, direction: 'asc' | 'desc' = 'desc'): void {
+    const qs = this.criteria?.queryString?.() ?? '';
+    if (/(^|&)orderBy=/.test(qs)) return;
+    this.criteria.orderBy(column, direction);
+  }
+
   initCriteria(): RequestCriteria {
     this.criteria = this.criteriaFactory.create(this.searchForm);
 

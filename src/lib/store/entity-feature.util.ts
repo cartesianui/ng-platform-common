@@ -66,10 +66,32 @@ export function entityFeature<T, TStateExtension extends Record<string, any> = {
     })),
 
     // -- selection
-    on(actions.select, (state, { entity }) => ({
-      ...state,
-      selected: entity
-    })),
+    //
+    // `select` is how `getById$` delivers its result (it dispatches
+    // `select({ entity })` on success), and `getById` had set `get` to
+    // STARTED. Nothing here ever completed it: only `load` — the getAll path —
+    // writes `get: completed`. So every `getById` left `get` started forever,
+    // and any listing watching `getState()` (all of them) froze its table for
+    // good. Invisible while `getById` only ever ran on routed edit pages with
+    // no listing on screen; it surfaced the first time something fired it
+    // inside an offcanvas flow — the cancel effect's re-fetch after a
+    // cancellation is confirmed ("loader stays"). Complete `get` here ONLY if
+    // it was started, so a plain `select(entity)` from a listing's Edit button
+    // (no request in flight) leaves the request state exactly as it was.
+    //
+    // The fetched entity is also upserted into the collection when it carries
+    // an id, so the listing row shows what the server just said (the document's
+    // new `cancelling` status) rather than what it said before the edit.
+    // A listing's own `select(entity)` upserts the row it already holds — a
+    // no-op.
+    on(actions.select, (state, { entity }) => {
+      const base = (entity as any)?.id != null ? adapter.upsertOne(entity as any, state) : state;
+      return {
+        ...base,
+        selected: entity,
+        get: state.get?.started ? { ...requestCompleted } : state.get
+      };
+    }),
 
     // -- CRUD (standard NgRx Entity adapter ops)
     on(actions.add, (state, { entity }) => adapter.addOne(entity, state)),

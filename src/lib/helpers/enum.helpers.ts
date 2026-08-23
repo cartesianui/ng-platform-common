@@ -214,7 +214,14 @@ function buildMetaApi<V extends string | number>(
     getTextClass:  (v) => { const c = colorOf(v); return c ? `text-${c}` : ''; },
     getBadgeClass: (v) => {
       const c = colorOf(v);
-      return c ? `bg-${c}-subtle text-${c} border border-${c} border-opacity-25` : '';
+      // Bootstrap 5.3's intended trio for a tinted badge: subtle background,
+      // EMPHASIS foreground, subtle border. The previous pairing put plain
+      // `text-{c}` on `bg-{c}-subtle` with a 25%-opacity border, which is
+      // washed out at small sizes — `secondary` in particular was barely
+      // legible. `-emphasis` is the darker accessible foreground token meant
+      // to sit on `-subtle`, so this reads properly without abandoning the
+      // tinted style for solid fills.
+      return c ? `bg-${c}-subtle text-${c}-emphasis border border-${c}-subtle` : '';
     },
     getOptions:  () => options,
     getLabelMap: () => labelMap,
