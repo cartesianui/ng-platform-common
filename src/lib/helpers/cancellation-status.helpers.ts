@@ -41,3 +41,29 @@ export const CancellationOpenStateValueMap: Record<string, string> = {
   stuck:   '<i class="fa-solid fa-triangle-exclamation text-danger" title="Cancellation stuck — open to retry"></i>',
   running: '<i class="fa-solid fa-spinner fa-spin text-warning" title="Cancelling…"></i>',
 };
+
+/** Cancellation header status (BE `CancellationStatus`). */
+export const CancellationStatuses = {
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  FAILED_PARTIAL: 'failed_partial',
+} as const;
+export type CancellationStatus = (typeof CancellationStatuses)[keyof typeof CancellationStatuses];
+
+/** Cancellation line state (BE `CancellationLineState`). */
+export const CancellationLineStates = { PENDING: 'pending', DONE: 'done', FAILED: 'failed' } as const;
+
+/** The answers a cancellation line can carry (BE `CancellationAnswer`). */
+export const CancellationAnswers = {
+  NEVER_ARRIVED: 'never_arrived',
+  GOING_BACK: 'going_back',
+  CANCEL_IT: 'cancel_it',
+  DEBIT_MEMO: 'debit_memo',
+  NEVER_PAID: 'never_paid',
+  ALREADY_REFUNDED: 'already_refunded',
+  REFUND: 'refund',
+  CREDIT: 'credit',
+} as const;
+
+/** The open-cancellation marker a listing row carries (`cancellation_state`). */
+export const CancellationOpenStates = { STUCK: 'stuck', RUNNING: 'running' } as const;
