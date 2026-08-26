@@ -58,8 +58,39 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
     return projectNestedFormFields(entity) as TEntity;
   }
 
+  /**
+   * Fields the SERVER owns on this screen — built into the form group by the model's
+   * `form:` metadata, but never sent from here.
+   *
+   * Added 2026-08-26 after a live defect on the purchase-order and receive-note edit
+   * screens. `status` became an action there (a Confirm / Receive button and a badge), the
+   * pickers were removed from both templates, and the server started answering `status`
+   * on the update request with a 422. What nobody noticed is that removing a
+   * `formControlName` from a template does not remove the CONTROL: the form group is built
+   * from the model's `form:` metadata, `fromFormGroup` reads `formGroup.value`, and the
+   * PATCH went on carrying `status` — so **Save failed on every edit of either document**
+   * while both screens looked correct. The browser pass had exercised the buttons and the
+   * badges, not a plain Save.
+   *
+   * Declaring it here rather than deleting it from the model's `form:` block, because the
+   * same block builds the CREATE form, where the status is a real (if narrowed) choice.
+   * Declaring it here rather than stripping the key in each `onSave()`, because that is a
+   * line every future screen has to remember and this is one a screen states once.
+   */
+  protected serverManagedFields(): string[] {
+    return [];
+  }
+
   protected getFormFromEntity(entity?: Partial<TEntity>): FormGroup {
-    return new this.entityConstructor().toForm(entity);
+    const formGroup = new this.entityConstructor().toForm(entity);
+
+    for (const key of this.serverManagedFields()) {
+      if (formGroup.contains(key)) {
+        formGroup.removeControl(key);
+      }
+    }
+
+    return formGroup;
   }
 
   // protected getEntityFromForm(formGroup?: FormGroup): TEntity {
