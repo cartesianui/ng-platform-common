@@ -55,9 +55,10 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
               [name]="multi() ? optionKey() : radioGroupName"
               class="form-check-input me-2"
               [checked]="isSelected(item)"
+              [disabled]="isDisabled()"
               (change)="onToggle(item, $event.target.checked)"
             />
-            <span>{{ getOptionLabel(item) }}</span>
+            <span [class.text-muted]="isDisabled()">{{ getOptionLabel(item) }}</span>
           </label>
         </div>
         <ng-template #noOptions>
@@ -103,6 +104,9 @@ export class ChoosableControlComponent<T = any>
   // Unique radio group name per component instance to prevent different
   // instances' radio inputs from being grouped together by the browser.
   readonly radioGroupName = `choosable-radio-${Math.random().toString(36).slice(2, 9)}`;
+
+  /** Set by `setDisabledState`; drives both the inputs and the label styling. */
+  protected readonly isDisabled = signal(false);
 
   readonly optionsEffect = effect(() => {
     const opts = this.options();
@@ -168,6 +172,12 @@ export class ChoosableControlComponent<T = any>
 
   // --- Interaction handlers ---
   onToggle(item: T, checked: boolean) {
+    // Belt and braces: the inputs are disabled above, but nothing else in this component
+    // stops a programmatic or synthetic change, and a locked money field must not move.
+    if (this.isDisabled()) {
+      return;
+    }
+
     const key = this.getOptionKey(item);
     const current = this.toArray(this.value());
 
@@ -282,7 +292,23 @@ export class ChoosableControlComponent<T = any>
     this.onTouched = fn;
   }
 
+  /**
+   * Angular calls this whenever the bound control is disabled or enabled.
+   *
+   * It used to call `markForCheck()` and record NOTHING, and the radios below had no `disabled`
+   * binding — so a disabled control rendered fully clickable (`UF-S6.33`). Found on a settled
+   * payment: `applyMoneyLock()` disables `method`, the API says `money_locked: true`, and the
+   * Method radios could still be changed from Cash to Bank.
+   *
+   * That was worse than either extreme. The lock WAS real in the form model — a disabled control
+   * drops out of `FormGroup.value`, so the save could not resend it — which means the operator
+   * changed the method on screen, saved, and had the change silently discarded. The screen said
+   * one thing and the record said another.
+   *
+   * This control is shared, so every disabled radio group in the product was affected.
+   */
   setDisabledState(isDisabled: boolean): void {
+    this.isDisabled.set(isDisabled);
     this.cdr.markForCheck();
   }
 
