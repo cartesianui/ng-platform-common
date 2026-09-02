@@ -1,4 +1,4 @@
-import { Directive, Input, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, TemplateRef, ViewContainerRef, effect, inject, input } from '@angular/core';
 import { PermissionCheckerService } from '@cartesianui/core';
 
 /**
@@ -20,23 +20,42 @@ import { PermissionCheckerService } from '@cartesianui/core';
  */
 @Directive({
   selector: '[accessible]',
-  standalone: false
+  standalone: true
 })
-export class AccessibleDirective implements OnInit {
+export class AccessibleDirective {
   private hasView = false;
 
-  @Input() set accessible(value: string[] | AccessibleConfig) {
-    this.updateView(value);
-  }
+  /**
+   * STANDALONE, and REACTIVE — both changed 2026-09-01, and both were blockers.
+   *
+   * `standalone: false` meant this directive could not be imported by a standalone component
+   * at all, which is most of the app now. Its only three usages were inside NgModule-declared
+   * templates, so the limit had never been felt — the first standalone screen that needed to
+   * gate something (the Adjustments tab) could not use it.
+   *
+   * The reactivity matters more. It used to resolve ONCE, in an `@Input` setter. Permissions
+   * arrive from the config bundle, which the app initializer loads at bootstrap AND AGAIN
+   * after a successful login — by which point the setter has long since run. So a gated
+   * element decided its visibility against the pre-login (empty) permission set and kept that
+   * answer until a manual page reload. `PermissionCheckerService` documents this exact failure
+   * against the nav menu and grew a `version` signal for it; reading the check inside an
+   * `effect` is what makes this directive honour it.
+   *
+   * A gate that silently fails CLOSED after login is not much better than no gate: the tab
+   * simply is not there, and nobody reports a missing thing they never saw.
+   */
+  readonly accessible = input.required<string[] | AccessibleConfig>();
 
-  constructor(
-    private templateRef: TemplateRef<any>,
-    private viewContainer: ViewContainerRef,
-    private permissionCheckerService: PermissionCheckerService
-  ) {}
+  private templateRef = inject(TemplateRef<any>);
+  private viewContainer = inject(ViewContainerRef);
+  private permissionCheckerService = inject(PermissionCheckerService);
 
-  ngOnInit() {
-    // View will be updated in the setter
+  constructor() {
+    effect(() => {
+      // Both reads must happen INSIDE the effect: the input for template changes, and the
+      // permission check (which tracks the service's `version` signal) for login.
+      this.updateView(this.accessible());
+    });
   }
 
   private updateView(value: string[] | AccessibleConfig) {

@@ -54,7 +54,10 @@ const VALIDATION_DIRECTIVES = [
   RequireRelativeValidator
 ];
 const FORM_COMPONENTS = [ConfigurableFormComponent, ButtonComponent, InputComponent, SelectComponent, ConfigurableFieldDirective];
-const WIDGET_COMPONENTS = [LookupWidgetComponent, DefaultActionsComponent, AlertComponent, ConfirmDialogComponent];
+// `AlertComponent` is NOT here: it went standalone 2026-09-01 so standalone screens could use
+// it, and a standalone component is imported, never declared. It stays exported below, so all
+// 25 existing `<app-alert>` template usages are unaffected.
+const WIDGET_COMPONENTS = [LookupWidgetComponent, DefaultActionsComponent, ConfirmDialogComponent];
 const COMMON_COMPONENTS = [
   BaseComponent, 
   RepeatableFormControlsComponent, 
@@ -78,9 +81,13 @@ const COMMON_COMPONENTS = [
     NgxDatatableModule,
     RegionalCurrencyPipe,
     FixedPopupPositionDirective,
+    AccessibleDirective,
+    AlertComponent,
   ],
-  declarations: [TimeSincePipe, FormatPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
-  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, ...COMMON_COMPONENTS]
+  // `AccessibleDirective` moved to `imports`: it is standalone as of 2026-09-01 so that
+  // standalone components can gate on it, and a standalone directive is imported, never declared.
+  declarations: [TimeSincePipe, FormatPipe, BusyDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
+  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, ...COMMON_COMPONENTS]
 })
 export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {
