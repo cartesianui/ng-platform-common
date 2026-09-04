@@ -16,6 +16,17 @@ export abstract class RepeatableFormBaseComponent<TEntity extends IHasForm<TEnti
   readonly data = input<TEntity>();
   readonly index = input<number>();
 
+  /**
+   * The parent document is closed to edits, so this row is too (UF-P1.6).
+   *
+   * Disabling the row's own `formGroup` rather than rendering a second,
+   * read-only template: one template stays the single description of what a
+   * row looks like, and a disabled control cannot be typed into, tabbed into,
+   * or submitted. The parent removes Add / Remove via `repeatable-form`'s own
+   * `readonly` input — this input has no reach outside its row.
+   */
+  readonly locked = input<boolean>(false);
+
   constructor(@Optional() @Inject(ENTITY_CONSTRUCTOR) entityConstructor?: EntityStatic<TEntity>) {
     super(entityConstructor);
     // Stamp this row's current position onto its own formGroup so
@@ -30,6 +41,16 @@ export abstract class RepeatableFormBaseComponent<TEntity extends IHasForm<TEnti
       if (this.formGroup && idx !== undefined) {
         (this.formGroup as any)[ROW_INDEX_KEY] = idx;
       }
+    });
+
+    // Runs after the row builds its form (edit rows build theirs in their own
+    // `dataEffect`), and again if the flag flips — a draft that gets issued
+    // while the screen is open turns read-only without a reload.
+    effect(() => {
+      const locked = this.locked();
+      if (!this.formGroup) return;
+      if (locked && this.formGroup.enabled) this.formGroup.disable({ emitEvent: false });
+      if (!locked && this.formGroup.disabled) this.formGroup.enable({ emitEvent: false });
     });
   }
 

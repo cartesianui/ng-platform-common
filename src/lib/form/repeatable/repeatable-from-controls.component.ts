@@ -11,7 +11,7 @@ import { ROW_VALID_KEY } from '../validation/validation.types';
         <ng-container *ngTemplateOutlet="template; context: getContext(item, i)"></ng-container>
       </div>
 
-      <div class="repeatable-row__actions col-auto d-flex flex-column justify-content-center gap-2">
+      <div *ngIf="!readonly" class="repeatable-row__actions col-auto d-flex flex-column justify-content-center gap-2">
         <button *ngIf="showSaveButton" type="button" class="btn btn-success btn-sm repeatable-row__save" (click)="save(i)" title="Save">
           <i class="fa-solid fa-save"></i>
         </button>
@@ -22,7 +22,7 @@ import { ROW_VALID_KEY } from '../validation/validation.types';
       </div>
     </div>
 
-    <div class="repeatable-add">
+    <div *ngIf="!readonly" class="repeatable-add">
       <button type="button" class="btn repeatable-add__btn" (click)="add()">
         <i class="fa-solid fa-plus"></i>
         <span *ngIf="addLabel" class="repeatable-add__label">{{ addLabel }}</span>
@@ -41,6 +41,16 @@ export class RepeatableFormControlsComponent<TDataModel> {
 
   /** Optional label for the add button (e.g. "Add item"). Empty = icon only. */
   @Input() addLabel: string = '';
+
+  /**
+   * Show the rows, but offer no way to change the SET of them (UF-P1.6).
+   *
+   * The rows themselves are made read-only by their own row component — this
+   * only removes Add and Remove, which live here and nowhere else. Set it
+   * wherever the parent document is closed to edits; an issued invoice is the
+   * first caller.
+   */
+  @Input() readonly: boolean = false;
 
   @Output() dataChange = new EventEmitter<TDataModel[]>();
 

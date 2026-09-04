@@ -1,9 +1,51 @@
 <alert [type]="kind" [dismissible]="dismissible" (onClose)="onClosed()">
   <div class="d-flex align-items-start gap-2">
     <i *ngIf="icon" [class]="icon + ' mt-1'"></i>
+
     <div class="flex-grow-1">
+      <!-- Title keeps its own row, as it always has — 25 existing usages read that way. -->
       <div *ngIf="title" class="fw-semibold mb-1">{{ title }}</div>
-      <ng-content></ng-content>
+
+      <!--
+        ONE ROW: message, toggle, actions.
+
+        The whole point of collapsing detail is vertical space, and a toggle on its own line
+        gives back exactly what the collapse saved. So the control sits at the end of the
+        message it belongs to, and the caller's action buttons project after it via
+        `[alertActions]` — otherwise an action would land above the toggle and the row would
+        read out of order.
+      -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="flex-grow-1"><ng-content></ng-content></div>
+
+        <!-- inline mode: the sentence rides on the same line rather than earning a control. -->
+        <span *ngIf="inlineDetail as line" class="text-muted small">{{ line }}</span>
+
+        <button
+          *ngIf="showsToggle"
+          type="button"
+          class="btn btn-link btn-sm p-0 text-decoration-none text-nowrap"
+          [attr.aria-expanded]="expanded()"
+          (click)="toggle()"
+        >
+          <i class="fa-solid" [class.fa-chevron-right]="!expanded()" [class.fa-chevron-down]="expanded()"></i>
+          <span class="ms-1">{{ expanded() ? 'Hide detail' : detailsLabel }}</span>
+          <span class="ms-1 text-muted" *ngIf="!expanded() && details.length > 1">({{ details.length }})</span>
+        </button>
+
+        <ng-content select="[alertActions]"></ng-content>
+      </div>
+
+      <!--
+        `[hidden]` rather than *ngIf so the text stays in the DOM: it explains a figure on
+        screen, and find-in-page should reach it without first discovering the toggle.
+      -->
+      <div [hidden]="!showsDetailBlock" class="mt-1">
+        <div *ngFor="let line of details" class="d-flex align-items-start gap-2 small">
+          <i class="fa-solid fa-circle-info mt-1 text-secondary"></i>
+          <span>{{ line }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </alert>
