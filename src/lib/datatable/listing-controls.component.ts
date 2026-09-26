@@ -194,7 +194,34 @@ export abstract class ListingControlsComponent<TDataModel, TChildComponent exten
   }
 
   appendSearchCriteriaToUrl() {
-    this._location.replaceState(`${this.router.url.split('?')[0]}${ '?' + this.criteria.queryString()}`);
+    const qs = this.criteria?.queryString?.() ?? '';
+    // QA TC-206 (2026-09-23): keep the open document in the URL beside the criteria, or rewriting the search
+    // here would wipe the deep link the moment the listing loads.
+    const open = this.deepLinkOpenId ? `${qs ? '&' : ''}open=${encodeURIComponent(this.deepLinkOpenId)}` : '';
+    this._location.replaceState(`${this.router.url.split('?')[0]}${'?' + qs + open}`);
+  }
+
+  // ── QA TC-206 (2026-09-23) — DEEP LINK TO AN OPEN DOCUMENT. OPT-IN, ADDITIVE.
+  //
+  // A document opens as a drawer OVER its listing, and nothing about that reached the URL — so a copied link
+  // reopened the bare listing. A listing opts in by calling `markOpened(id)` when it opens a row and by
+  // reading `deepLinkedId()` at init to reopen it. Listings that do neither behave exactly as before.
+  private deepLinkOpenId: string | null = null;
+
+  /** The `open` id the page was loaded with, if any. */
+  protected deepLinkedId(): string | null {
+    return new URLSearchParams(this.router.url.split('?')[1] || '').get('open');
+  }
+
+  /** Record (or clear, with null) the document the drawer shows, so the URL can reopen it. */
+  protected markOpened(id: string | null): void {
+    this.deepLinkOpenId = id;
+    if (this.criteria) this.appendSearchCriteriaToUrl();
+  }
+
+  override hideChildComponent(visible): void {
+    super.hideChildComponent(visible);
+    if (visible === false && this.deepLinkOpenId) this.markOpened(null);
   }
 
   /**

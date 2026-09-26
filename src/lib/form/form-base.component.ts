@@ -76,6 +76,39 @@ export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChil
    * same block builds the CREATE form, where the status is a real (if narrowed) choice.
    * Declaring it here rather than stripping the key in each `onSave()`, because that is a
    * line every future screen has to remember and this is one a screen states once.
+   *
+   * ─────────────────────────────────────────────────────────────────────────────────────
+   * ⚠⚠ WHAT IT COSTS — read this before reaching for it (added 2026-09-17, `SO-F164`)
+   *
+   * Everything above says why this EXISTS. It did not say what it DOES, and an architect
+   * read it as a payload filter and ruled accordingly. It is not one.
+   *
+   * 1. ⚠⚠⚠ IT REMOVES THE CONTROL. `getFormFromEntity` below calls
+   *    `formGroup.removeControl(key)`. So a field declared here MUST NOT still carry a
+   *    live `formControlName` binding in the template — the binding would have nothing to
+   *    bind to and Angular throws "Cannot find control with name" AT RUNTIME.
+   *    ⚠ `ng build` will NOT catch that: it compiles templates, it does not instantiate a
+   *    form group. The screen breaks behind a green build.
+   *
+   * 2. ⚠ THE KEY IS THE MODEL METADATA KEY, NOT THE WIRE KEY. `formGroup.contains(key)` is
+   *    tested against control names, which come from the model's `form:` block and are
+   *    camelCase — `saleOrderId`, not `sale_order_id`. A wire-cased key matches nothing,
+   *    removes nothing, raises no error, and leaves the field still being posted: the fix
+   *    does nothing while looking done.
+   *
+   * 3. A FIELD THE OPERATOR SHOULD SEE BUT NOT CHANGE DOES NOT BELONG HERE. Use
+   *    `[readonly]` / `disable()` instead — a disabled control is already omitted from
+   *    `formGroup.value`, so the value is withheld AND the field stays visible and greyed.
+   *    Declaring it here instead would hide it entirely; removing the visual lock in favour
+   *    of this would leave an ENABLED control the operator can type into that silently does
+   *    nothing.
+   *
+   * ⚠ THE TWO ARE MUTUALLY EXCLUSIVE ON ONE CONTROL, and `purchase-return/edit` is the
+   * worked example of the split: `status` is declared here and has ZERO `formControlName`
+   * bindings (its picker was replaced by a badge and action buttons), while `vendorId` and
+   * `purchaseOrderId` stay BOUND with `[readonly]` and are deliberately NOT declared here.
+   * Visible keeps its binding; server-managed loses it.
+   * ─────────────────────────────────────────────────────────────────────────────────────
    */
   protected serverManagedFields(): string[] {
     return [];
