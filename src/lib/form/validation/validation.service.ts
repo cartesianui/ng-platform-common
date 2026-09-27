@@ -46,6 +46,23 @@ export class ValidationService {
         const minRequirement = this.getErrorMessage(errors, 'minlength')?.requiredLength;
         return ERROR_MESSAGES['minlength'](formControlName, minRequirement);
 
+      case this.checkErrorType(errors, 'maxlength'):
+        const maxRequirement = this.getErrorMessage(errors, 'maxlength')?.requiredLength;
+        return ERROR_MESSAGES['maxlength'](formControlName, maxRequirement);
+
+      // Angular's Validators.min sets the error payload as { min: { min, actual } }.
+      // Surface the schema-declared floor (`min` key) — actual is just current input.
+      case this.checkErrorType(errors, 'min'):
+        const minFloor = this.getErrorMessage(errors, 'min')?.min;
+        return ERROR_MESSAGES['min'](formControlName, minFloor);
+
+      case this.checkErrorType(errors, 'max'):
+        const maxCeiling = this.getErrorMessage(errors, 'max')?.max;
+        return ERROR_MESSAGES['max'](formControlName, maxCeiling);
+
+      case this.checkErrorType(errors, 'pattern'):
+        return ERROR_MESSAGES['pattern'](formControlName);
+
       default:
         return 'Invalid';
     }
@@ -160,16 +177,35 @@ export class ValidationService {
    * @param values Array of values to look in
    * @returns true if control value is in the given array, false otherwise
    */
+
   inValidator(validValues: any[], multiple: boolean = false, separator: string = ','): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
-      let valid = null;
-      if (multiple) {
-        let values = control.value && typeof control.value === 'string' ? control.value.split(separator) : control.value;
-        valid = values.length ? values.every((value) => validValues.indexOf(value) !== -1) : true;
-      } else {
-        valid = validValues.indexOf(control.value) !== -1;
+    return (control: AbstractControl) => {
+      if (!control.value) {
+        return null; // Empty is valid unless required
       }
-      return valid ? null : { value: { value: 'Invalid value.' } };
+
+      const normalize = (val: any) => (typeof val === 'string' ? val.trim() : val);
+
+      if (multiple) {
+        let values: any[] = [];
+
+        if (typeof control.value === 'string') {
+          values = control.value
+            .split(separator)
+            .map(normalize)
+            .filter((v) => v !== '');
+        } else if (Array.isArray(control.value)) {
+          values = control.value.map(normalize);
+        } else {
+          return { value: { value: 'Invalid format.' } };
+        }
+
+        const allValid = values.every((v) => validValues.includes(v));
+        return allValid ? null : { value: { value: 'Invalid value.' } };
+      } else {
+        const val = normalize(control.value);
+        return validValues.includes(val) ? null : { value: { value: 'Invalid value.' } };
+      }
     };
   }
 

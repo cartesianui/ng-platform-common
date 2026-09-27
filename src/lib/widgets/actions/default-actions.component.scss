@@ -1,4 +1,50 @@
+// Actions bar
 .app-actions {
-  display: flex;
-  justify-content: flex-end;
+  padding-bottom: 0.5rem;
+
+  // Mockup action buttons: ~13px label, comfortable hit area, soft lift on
+  // the solid primary (Create/Save) so it reads as the page's lead action.
+  .btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+
+    i {
+      margin-inline-end: 0.4rem;
+      font-size: 0.8rem;
+    }
+
+    i:only-child {
+      margin-inline-end: 0;
+    }
+  }
+
+  .btn-primary {
+    box-shadow: 0 6px 14px -8px var(--cui-primary);
+  }
+
+  // Ensure consistent small input heights align with buttons
+  .form-control-sm,
+  .input-group-sm .form-control {
+    height: auto;
+  }
+
+  // Input group styling - seamless borders
+  .input-group-text {
+    border-right: 0;
+    padding-inline-end: 0.5rem;
+  }
+
+  .input-group .form-control {
+    border-left: 0;
+    padding-inline-start: 0.5rem;
+  }
+
+  // Mobile: left-align everything
+  @media (max-width: 768px) {
+    .d-flex {
+      justify-content: flex-start;
+    }
+  }
 }

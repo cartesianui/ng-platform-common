@@ -1,0 +1,211 @@
+import { Inject, Optional, Component, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import { FormGroup } from '@angular/forms';
+import { BaseComponent } from '../base.component';
+import { ChildComponent, EntityStatic, ENTITY_CONSTRUCTOR } from '../base.types';
+import { IHasForm } from '../base.types';
+import { projectNestedFormFields } from '../models/utils';
+import { RequestState } from '../store';
+@Component({
+    template: '',
+    standalone: false
+})
+export abstract class FormBaseComponent<TEntity extends IHasForm<TEntity>, TChildComponent extends ChildComponent = {}> extends BaseComponent<TChildComponent> {
+  @ViewChild('formContainer', { static: false }) formContainer!: ElementRef;
+
+  @Output() created: EventEmitter<TEntity | boolean> = new EventEmitter();
+
+  @Output() updated: EventEmitter<TEntity | boolean> = new EventEmitter();
+
+  formGroup: FormGroup;
+
+  /**
+   *
+   * @param injector
+   * @param entityConstructor generic way to construct entity/domain model instance
+   */
+  constructor(
+    @Optional() @Inject(ENTITY_CONSTRUCTOR) protected entityConstructor?: EntityStatic<TEntity>
+  ) {
+    super();
+  }
+
+  protected initForm() {
+    this.formGroup = this.getFormFromEntity();
+  }
+
+  /**
+   * Subclasses with nested collections (items, lines, charges, attachments,
+   * ...) override this to declare them. The collections are merged onto the
+   * entity inside `getEntityFromForm`, then projected through
+   * `projectNestedFormFields` so each child ships only its declared form
+   * fields.
+   *
+   * Why a hook rather than convention-by-name: avoids hardcoding `items`,
+   * supports any number of collections per page, and keeps the merge a
+   * single explicit place rather than scattered `entity.x = this.x`
+   * assignments before each save call.
+   */
+  protected getNestedCollections(): Record<string, any> {
+    return {};
+  }
+
+  protected getEntityFromForm(formGroup?: FormGroup): TEntity {
+    const entity = new this.entityConstructor().fromForm(formGroup ?? this.formGroup);
+    Object.assign(entity, this.getNestedCollections());
+    // Recursively project nested model instances (items/lines/charges/etc.)
+    // through pickFormFields, so parent forms ship a clean payload without
+    // knowing their child constructors. See projectNestedFormFields docs.
+    return projectNestedFormFields(entity) as TEntity;
+  }
+
+  /**
+   * Fields the SERVER owns on this screen — built into the form group by the model's
+   * `form:` metadata, but never sent from here.
+   *
+   * Added 2026-08-26 after a live defect on the purchase-order and receive-note edit
+   * screens. `status` became an action there (a Confirm / Receive button and a badge), the
+   * pickers were removed from both templates, and the server started answering `status`
+   * on the update request with a 422. What nobody noticed is that removing a
+   * `formControlName` from a template does not remove the CONTROL: the form group is built
+   * from the model's `form:` metadata, `fromFormGroup` reads `formGroup.value`, and the
+   * PATCH went on carrying `status` — so **Save failed on every edit of either document**
+   * while both screens looked correct. The browser pass had exercised the buttons and the
+   * badges, not a plain Save.
+   *
+   * Declaring it here rather than deleting it from the model's `form:` block, because the
+   * same block builds the CREATE form, where the status is a real (if narrowed) choice.
+   * Declaring it here rather than stripping the key in each `onSave()`, because that is a
+   * line every future screen has to remember and this is one a screen states once.
+   *
+   * ─────────────────────────────────────────────────────────────────────────────────────
+   * ⚠⚠ WHAT IT COSTS — read this before reaching for it (added 2026-09-17, `SO-F164`)
+   *
+   * Everything above says why this EXISTS. It did not say what it DOES, and an architect
+   * read it as a payload filter and ruled accordingly. It is not one.
+   *
+   * 1. ⚠⚠⚠ IT REMOVES THE CONTROL. `getFormFromEntity` below calls
+   *    `formGroup.removeControl(key)`. So a field declared here MUST NOT still carry a
+   *    live `formControlName` binding in the template — the binding would have nothing to
+   *    bind to and Angular throws "Cannot find control with name" AT RUNTIME.
+   *    ⚠ `ng build` will NOT catch that: it compiles templates, it does not instantiate a
+   *    form group. The screen breaks behind a green build.
+   *
+   * 2. ⚠ THE KEY IS THE MODEL METADATA KEY, NOT THE WIRE KEY. `formGroup.contains(key)` is
+   *    tested against control names, which come from the model's `form:` block and are
+   *    camelCase — `saleOrderId`, not `sale_order_id`. A wire-cased key matches nothing,
+   *    removes nothing, raises no error, and leaves the field still being posted: the fix
+   *    does nothing while looking done.
+   *
+   * 3. A FIELD THE OPERATOR SHOULD SEE BUT NOT CHANGE DOES NOT BELONG HERE. Use
+   *    `[readonly]` / `disable()` instead — a disabled control is already omitted from
+   *    `formGroup.value`, so the value is withheld AND the field stays visible and greyed.
+   *    Declaring it here instead would hide it entirely; removing the visual lock in favour
+   *    of this would leave an ENABLED control the operator can type into that silently does
+   *    nothing.
+   *
+   * ⚠ THE TWO ARE MUTUALLY EXCLUSIVE ON ONE CONTROL, and `purchase-return/edit` is the
+   * worked example of the split: `status` is declared here and has ZERO `formControlName`
+   * bindings (its picker was replaced by a badge and action buttons), while `vendorId` and
+   * `purchaseOrderId` stay BOUND with `[readonly]` and are deliberately NOT declared here.
+   * Visible keeps its binding; server-managed loses it.
+   * ─────────────────────────────────────────────────────────────────────────────────────
+   */
+  protected serverManagedFields(): string[] {
+    return [];
+  }
+
+  protected getFormFromEntity(entity?: Partial<TEntity>): FormGroup {
+    const formGroup = new this.entityConstructor().toForm(entity);
+
+    for (const key of this.serverManagedFields()) {
+      if (formGroup.contains(key)) {
+        formGroup.removeControl(key);
+      }
+    }
+
+    return formGroup;
+  }
+
+  // protected getEntityFromForm(formGroup?: FormGroup): TEntity {
+  //   if (!this.entityConstructor?.fromForm) {
+  //     throw new Error('Missing static fromForm method on entity constructor');
+  //   }
+  //   return this.entityConstructor.fromForm(formGroup ?? this.formGroup);
+  // }
+
+  // protected getFormFromEntity(entity?: Partial<TEntity>): FormGroup {
+  //   if (!this.entityConstructor?.fromForm) {
+  //     throw new Error('Missing static fromForm method on entity constructor');
+  //   }
+  //   return this.entityConstructor.toForm(entity);
+  // }
+
+  /**
+   * Whether this component currently has a busy overlay showing.
+   *
+   * Tracked separately from the target because `undefined` is a MEANINGFUL
+   * target: `ui.setBusy(undefined)` shows the GLOBAL overlay. Conflating
+   * "no target" with "not busy" is what left that overlay stuck — see
+   * `handleFormBusyState`.
+   */
+  private busyShown = false;
+
+  /**
+   * The element shown busy by `handleFormBusyState`; `undefined` means the
+   * global overlay. Only meaningful while `busyShown` is true.
+   */
+  private busyTarget: HTMLElement | undefined;
+
+  protected handleFormBusyState(state: RequestState, element?: HTMLElement) {
+    const defaultElement = this.formContainer?.nativeElement;
+    const target = element ?? defaultElement;
+
+    // Busy iff a request is genuinely in flight. Anything else clears it.
+    //
+    // This used to test `started` / `completed` / `failed` as three separate
+    // ifs, which left a fourth state unhandled: `requestDefault`
+    // ({started:false, completed:false, failed:false}) — the value
+    // `clearRequestState()` resets to. Components run two effects off the same
+    // request: one calling this method, one that reacts to `*Completed()` and
+    // immediately calls `clearRequestState()`. When the latter won the race,
+    // this method's next run observed the all-false default, matched none of
+    // the three branches, and never called `clearBusy()` — so the spinner sat
+    // there forever even though the save had succeeded. That is the
+    // "spinner never goes away after editing" report, and because it lives in
+    // this shared base it affected every form in every app, not just EHR.
+    //
+    // Treating "not started" as "not busy" makes the handler idempotent and
+    // order-independent: whichever effect runs first, the terminal state
+    // always clears.
+    // Only ever clears a busy state this method actually set, so a form's
+    // first render (state = default, nothing in flight) does not fire a
+    // stray `clearBusy` at the vendor UI layer, and a `target` that changed
+    // between calls still gets released.
+    //
+    // QA Q6-B28/B29 — the guard used to be `if (this.busyTarget)`, with the
+    // target stored as `target ?? null`. A form with no `#formContainer`
+    // (the admin User create/edit forms, for instance) resolves `target` to
+    // `undefined`, which `ui.setBusy` treats as "show the GLOBAL overlay" —
+    // but the very same `undefined` was then recorded as `null`, so the
+    // clear branch never ran. The result was a page-blocking overlay that
+    // never went away, on BOTH the success and the error path, which is why
+    // one duplicate-email save locked the operator out of the whole screen.
+    //
+    // Tracking "did we set busy" separately from "what did we set it on"
+    // keeps the no-stray-clear property while making `undefined` a valid,
+    // clearable target.
+    if (state.started) {
+      this.ui.setBusy(target);
+      this.busyShown = true;
+      this.busyTarget = target;
+      return;
+    }
+
+    if (this.busyShown) {
+      this.ui.clearBusy(this.busyTarget);
+      this.busyShown = false;
+      this.busyTarget = undefined;
+    }
+  }
+
+}

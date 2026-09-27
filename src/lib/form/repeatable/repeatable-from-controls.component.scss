@@ -1,0 +1,86 @@
+/*
+ * <repeatable-form> — global styling for the inline repeatable list pattern.
+ * Add button: dashed full-width muted; on hover solid primary.
+ * Delete button: muted by default; danger on hover.
+ * Rows separated by 1px bottom border.
+ *
+ * Per-row content (children rendered via the ng-template) is consumer-styled.
+ */
+
+.repeatable-row {
+  align-items: center;
+  border-bottom: 1px solid var(--cui-border-color);
+  margin: 0;
+  padding: 0.5rem 0;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.repeatable-row__actions {
+  align-self: center;
+}
+
+.repeatable-row__save {
+  background: transparent;
+  border: none;
+  color: var(--cui-success);
+  box-shadow: none;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.15s ease;
+
+  &:hover {
+    background: transparent;
+    color: var(--cui-success);
+    opacity: 0.8;
+  }
+}
+
+.repeatable-row__remove {
+  background: transparent;
+  border: none;
+  color: var(--cui-secondary-color);
+  box-shadow: none;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.15s ease;
+
+  &:hover,
+  &:focus {
+    background: transparent;
+    color: var(--cui-danger);
+  }
+}
+
+.repeatable-add {
+  margin-top: 0.75rem;
+}
+
+.repeatable-add__btn {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed var(--cui-border-color);
+  color: var(--cui-secondary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-style: solid;
+    border-color: var(--cui-primary);
+    color: var(--cui-primary);
+    background: rgba(var(--cui-primary-rgb), 0.04);
+  }
+}
+
+.repeatable-add__label {
+  font-weight: 500;
+}

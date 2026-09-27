@@ -12,7 +12,8 @@ import { DatetimeService } from '../services';
  */
 
 @Pipe({
-  name: 'timeSince'
+    name: 'timeSince',
+    standalone: false
 })
 export class TimeSincePipe implements PipeTransform {
   transform(value: string, precision: 'years' | 'months' | 'days' = 'years'): string {

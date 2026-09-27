@@ -15,7 +15,8 @@ const components: { [type: string]: Type<IConfigurableField> } = {
 };
 
 @Directive({
-  selector: '[configurableField]'
+    selector: '[configurableField]',
+    standalone: false
 })
 export class ConfigurableFieldDirective implements IConfigurableField, OnChanges, OnInit {
   @Input() config: IFormField;

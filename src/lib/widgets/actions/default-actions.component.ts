@@ -1,10 +1,13 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 
+export type DisplayMode = 'icon' | 'text' | 'icon_text';
+
 @Component({
-  selector: 'default-actions, page-actions',
-  styleUrls: ['./default-actions.component.scss'],
-  templateUrl: './default-actions.component.html'
+    selector: 'default-actions, page-actions',
+    styleUrls: ['./default-actions.component.scss'],
+    templateUrl: './default-actions.component.html',
+    standalone: false
 })
 export class DefaultActionsComponent {
   _disabled: { [key: string]: boolean };
@@ -19,12 +22,28 @@ export class DefaultActionsComponent {
     this._hide = hide;
   }
 
-  @Input()
-  search: string = '';
+  @Input() display: DisplayMode = 'icon_text';
+  @Input() search: string = '';
+  @Input() startDate: string = '';
+  @Input() endDate: string = '';
+
+  /**
+   * Optional per-action label overrides, keyed by action name (e.g.
+   * `{ hire: 'Onboard', workspace: 'Open' }`). Lets a consumer relabel any
+   * button without forking the template. Falls back to each button's default.
+   */
+  readonly labels = input<Record<string, string>>({});
+
+  /** Resolve a button's label: consumer override (via `labels`) or the default. */
+  label(key: string, fallback: string): string {
+    return this.labels()?.[key] ?? fallback;
+  }
 
   @Output() view: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() save: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() create: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() hire: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() workspace: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() update: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() edit: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() delete: WatchedEventEmitter = new WatchedEventEmitter();
@@ -48,6 +67,8 @@ export class DefaultActionsComponent {
   @Output() exportAll: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() exportSelected: WatchedEventEmitter = new WatchedEventEmitter();
   @Output() searchChange: WatchedEventEmitter = new WatchedEventEmitter();
+  @Output() dateChange: WatchedEventEmitter<{ start: string | null; end: string | null }> = new WatchedEventEmitter<{ start: string | null; end: string | null }>();
+  @Output() dateRangeChange: WatchedEventEmitter<{ start: Date | null; end: Date | null }> = new WatchedEventEmitter<{ start: Date | null; end: Date | null }>();
 
   onView(e) {
     this.view.emit({ event: e });
@@ -117,7 +138,69 @@ export class DefaultActionsComponent {
     this.create.emit({ event: e });
   }
 
+  onHire(e) {
+    this.hire.emit({ event: e });
+  }
+
+  onWorkspace(e) {
+    this.workspace.emit({ event: e });
+  }
+
   onSearch() {
     this.searchChange.emit({ text: this.search });
   }
+
+  onDateChange(control: 'start' | 'end', event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (control === 'start') {
+      this.startDate = input.value || null;
+    } else {
+      this.endDate = input.value || null;
+    }
+
+    this.dateChange.emit({
+      start: this.startDate ?? null,
+      end: this.endDate ?? null
+    });
+  }
+
+  onDateRangeChange(range: Date[]) {
+    this.dateRangeChange.emit({
+      start: range[0] ?? null,
+      end: range[1] ?? null
+    });
+  }
+
+  /**
+   * Returns CSS classes based on display mode
+   * - 'icon': only show icon
+   * - 'text': only show text
+   * - 'icon_text': show icon and text
+   */
+  getDisplayClasses(): string {
+    switch (this.display) {
+      case 'icon':
+        return 'd-flex align-items-center';
+      case 'text':
+        return 'd-flex align-items-center';
+      case 'icon_text':
+      default:
+        return 'd-flex align-items-center gap-1';
+    }
+  }
+
+  /**
+   * Check if icon should be displayed
+   */
+  showIcon(): boolean {
+    return this.display === 'icon' || this.display === 'icon_text';
+  }
+
+  /**
+   * Check if text should be displayed
+   */
+  showText(): boolean {
+    return this.display === 'text' || this.display === 'icon_text';
+  }
+  
 }
