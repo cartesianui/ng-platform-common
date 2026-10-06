@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { SearchForm } from '@cartesianui/core';
+import { SearchForm } from '@cartesianui/platform-core';
 import { SearchFieldDescriptor } from './models/types';
 
 export type ChildComponent = { [key: string]: string | { [key: string]: string } };

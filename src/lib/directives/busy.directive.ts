@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input } from '@angular/core';
-import { UiService } from '@cartesianui/core';
+import { UiService } from '@cartesianui/platform-core';
 
 @Directive({
     selector: '[busy]',

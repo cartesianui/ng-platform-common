@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { WhereItem, SearchForm } from '@cartesianui/core';
+import { WhereItem, SearchForm } from '@cartesianui/platform-core';
 import { FieldDescriptor, SearchFieldDescriptor, SearchFieldType, SearchMetaInput } from './types';
 
 const LIST_KEY   = Symbol('list-meta');
@@ -117,7 +117,7 @@ export function EntityMeta(config: {
  *
  * MECHANISM ONLY — this library knows nothing about parties, vendors or customers, and must not.
  * It was briefly written here as `narrowPartyFilter(fields, 'vendor' | 'customer')` with `/vendors`
- * and `/customers` hard-coded, and the user rejected that placement: *"@cartesianui/common don't
+ * and `/customers` hard-coded, and the user rejected that placement: *"@cartesianui/platform-common don't
  * know about lower level things"*. They were right, and it was inconsistent with the very precedent
  * cited for it — the sibling `narrowSourceTypeFilter()` lives in the billing library that owns the
  * concept. The domain half now sits beside it; only the mechanism is here.

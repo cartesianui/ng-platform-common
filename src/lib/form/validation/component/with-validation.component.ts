@@ -1,7 +1,7 @@
 import { Component, ContentChild, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, AfterContentInit } from '@angular/core';
 import { ValidateDirective } from '../directive/validate.directive';
 import { ValidationService } from '../validation.service';
-import { HttpErrorService, IError } from '@cartesianui/core';
+import { HttpErrorService, IError } from '@cartesianui/platform-core';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 import { ROW_INDEX_KEY } from '../validation.types';
 

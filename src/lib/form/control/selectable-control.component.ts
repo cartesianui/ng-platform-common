@@ -44,7 +44,7 @@ import {
   switchMap,
   tap
 } from 'rxjs';
-import { AppConfig, ObjectUtils, RequestCriteria, unwrapFractalData } from '@cartesianui/core';
+import { AppConfig, ObjectUtils, RequestCriteria, unwrapFractalData } from '@cartesianui/platform-core';
 import { isUuid, isValidInteger } from '../../helpers';;
 import { FixedPopupPositionDirective } from '../../directives';
 

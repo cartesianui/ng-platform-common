@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime } from 'rxjs';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
-import { RequestCriteria } from '@cartesianui/core';
+import { RequestCriteria } from '@cartesianui/platform-core';
 import { SearchFieldDescriptor } from '../../models/types';
 import { SelectableControlComponent } from '../../form/control/selectable-control.component';
 import { SelectControlComponent } from '../../form/control/select-control.component';

@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeSincePipe, FormatPipe, RegionalCurrencyPipe } from './pipes';
 
 // `RegionalCurrencyPipe` is standalone — consumers import it directly
-// from `@cartesianui/common`. Including it in the imports array here
+// from `@cartesianui/platform-common`. Including it in the imports array here
 // re-exports it for module-based consumers.
 import { BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective } from './directives';
 

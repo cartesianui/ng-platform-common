@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, EMPTY, asyncScheduler } from 'rxjs';
 import { map, switchMap, catchError, observeOn } from 'rxjs/operators';
 import { Update,  } from '@ngrx/entity';
-import { ICartesianResponse, IHttpService, IHttpServiceExtension, RequestCriteriaOuput } from '@cartesianui/core';
+import { ICartesianResponse, IHttpService, IHttpServiceExtension, RequestCriteriaOuput } from '@cartesianui/platform-core';
 import { entityActions } from './entity-actions.util';
 
 /**

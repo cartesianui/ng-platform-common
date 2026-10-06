@@ -1,8 +1,8 @@
 // utils/entity-actions.util.ts
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Update } from '@ngrx/entity';
-import { IError, RequestCriteriaOuput } from '@cartesianui/core';
-import { ResponseMeta } from '@cartesianui/common';
+import { IError, RequestCriteriaOuput } from '@cartesianui/platform-core';
+import { ResponseMeta } from '@cartesianui/platform-common';
 
 export function entityActions<TModel, TName extends string>(entityName: TName) {
   return createActionGroup({

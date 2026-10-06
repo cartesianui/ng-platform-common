@@ -1,4 +1,4 @@
-# Changelog - @cartesianui/common
+# Changelog - @cartesianui/platform-common
 
 All notable changes to the common library will be documented in this file.
 
@@ -413,7 +413,7 @@ Follow [Semantic Versioning](https://semver.org/):
 
 ## Notes
 
-This changelog was started on 2026-01-30 to track changes to the @cartesianui/common library. All significant changes will be documented here moving forward.
+This changelog was started on 2026-01-30 to track changes to the @cartesianui/platform-common library. All significant changes will be documented here moving forward.
 
 For questions or clarifications about any change, refer to:
 - The referenced documentation files

@@ -346,7 +346,7 @@ The control accepts language codes (`'en'`), language names (`'English'`), or fu
 **Component setup:**
 
 ```typescript
-import { LanguageSelectComponent } from '@cartesianui/common';
+import { LanguageSelectComponent } from '@cartesianui/platform-common';
 
 @Component({
   imports: [LanguageSelectComponent, ...],

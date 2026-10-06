@@ -1,5 +1,5 @@
 import { inject, Injector } from '@angular/core';
-import { SessionService, localeDateString } from '@cartesianui/core';
+import { SessionService, localeDateString } from '@cartesianui/platform-core';
 
 export abstract class Sandbox {
 

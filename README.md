@@ -1,4 +1,4 @@
-# @cartesianui/common
+# @cartesianui/platform-common
 
 Shared platform library for CartesianUI Angular applications. Provides base classes, utilities, and infrastructure that all feature libraries build on.
 

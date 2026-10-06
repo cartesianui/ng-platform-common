@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, ViewContainerRef, effect, inject, input } from '@angular/core';
-import { PermissionCheckerService } from '@cartesianui/core';
+import { PermissionCheckerService } from '@cartesianui/platform-core';
 
 /**
  * Structural directive to show/hide elements based on permissions and roles

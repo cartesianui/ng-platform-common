@@ -1,6 +1,6 @@
 import { Inject, Optional, AfterViewInit, Component, EventEmitter, Injector, Input, Output, inject, effect, ChangeDetectorRef, untracked } from '@angular/core';
 import { ElementRef, ViewChild, runInInjectionContext, DestroyRef } from '@angular/core';
-import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/core';
+import { RequestCriteria, RequestCriteriaFactory, SearchForm } from '@cartesianui/platform-core';
 import { DateTime } from 'luxon';
 import { ExportService, ExportFormat } from '../services/export.service';
 import { DatetimeService } from '../services/datetime.service';

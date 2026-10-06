@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { AppConfig, ObjectUtils } from '@cartesianui/core';
+import { AppConfig, ObjectUtils } from '@cartesianui/platform-core';
 
 export type ExportFormat = 'csv' | 'xlsx' | 'pdf';
 
