@@ -1,7 +1,7 @@
 // shared/utils/entity-feature.util.ts
 import { createFeature, createReducer, on, createSelector } from '@ngrx/store';
 import { EntityAdapter, createEntityAdapter, Update } from '@ngrx/entity';
-import { EntityStateExtended, requestCompleted, requestDefault, requestFailed, requestStarted, updateMetaState } from '@cartesianui/common';
+import { EntityStateExtended, requestCompleted, requestDefault, requestFailed, requestStarted, updateMetaState } from '@cartesianui/platform-common';
 
 export function entityFeature<T, TStateExtension extends Record<string, any> = {}>(
   featureKey: string,

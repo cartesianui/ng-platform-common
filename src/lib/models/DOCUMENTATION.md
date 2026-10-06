@@ -56,7 +56,7 @@ All three properties are optional — include only what the entity needs.
 Shows multiline columns, badges, currency formatting, entity/select/daterange search, and option values pattern.
 
 ```typescript
-import { BaseModel, DateFormat, toLabel, EntityMeta } from '@cartesianui/common';
+import { BaseModel, DateFormat, toLabel, EntityMeta } from '@cartesianui/platform-common';
 import { Validators } from '@angular/forms';
 
 export const PurchaseOrderStatuses = {
@@ -764,7 +764,7 @@ How a listing component is structured using the model metadata system.
 ### Component Class
 
 ```typescript
-import { SearchPanelComponent } from '@cartesianui/common';
+import { SearchPanelComponent } from '@cartesianui/platform-common';
 
 @Component({
   imports: [...LISTING_IMPORTS, AppDatatableComponent, SearchPanelComponent],

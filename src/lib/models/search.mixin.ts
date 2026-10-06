@@ -1,4 +1,4 @@
-import { SearchForm } from '@cartesianui/core';
+import { SearchForm } from '@cartesianui/platform-core';
 import { SearchFieldDescriptor } from './types';
 import { toReadableName } from './datatable.utils';
 import { FieldMetaBuilder } from './utils';

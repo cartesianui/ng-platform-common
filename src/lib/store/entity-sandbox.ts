@@ -2,8 +2,8 @@ import { Injector, Signal, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Store, select } from '@ngrx/store';
 import { map, Observable } from 'rxjs';
-import { RequestCriteriaOuput } from '@cartesianui/core';
-import { Sandbox, RequestTypes, RequestType, RequestState, ResponseMeta, Pagination } from '@cartesianui/common';
+import { RequestCriteriaOuput } from '@cartesianui/platform-core';
+import { Sandbox, RequestTypes, RequestType, RequestState, ResponseMeta, Pagination } from '@cartesianui/platform-common';
 
 interface EntityConfig<T> {
   selectors: any;

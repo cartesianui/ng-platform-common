@@ -44,7 +44,7 @@ Every entity needs three files: actions, reducer (feature), and effects. The fac
 
 ```typescript
 // store/product/actions.ts
-import { entityActions } from '@cartesianui/common';
+import { entityActions } from '@cartesianui/platform-common';
 import { Product } from '../../models';
 
 const actions = entityActions<Product, 'Product'>('Product');
@@ -57,7 +57,7 @@ This generates a full action group with source `[Product/API]` containing: `getA
 
 ```typescript
 // store/product/reducer.ts
-import { entityFeature } from '@cartesianui/common';
+import { entityFeature } from '@cartesianui/platform-common';
 import { Product } from '../../models';
 import { ProductActions } from './actions';
 
@@ -74,7 +74,7 @@ This creates a complete NgRx feature with:
 ```typescript
 // store/product/effect.ts
 import { Injectable } from '@angular/core';
-import { EntityEffect } from '@cartesianui/common';
+import { EntityEffect } from '@cartesianui/platform-common';
 import { Product } from '../../models';
 import { ProductActions } from './actions';
 import { ProductHttpService } from '../../shared';
@@ -175,7 +175,7 @@ All signal properties have a matching `$` Observable counterpart: `entities$`, `
 ### Clearing Request State
 
 ```typescript
-import { RequestType } from '@cartesianui/common';
+import { RequestType } from '@cartesianui/platform-common';
 
 // Clear specific operation
 this.sb.product.clearRequestState(RequestType.Create);
@@ -381,7 +381,7 @@ Define an extension type with the custom method signatures, then implement them 
 ```typescript
 // shared/shift/http.service.ts
 import { Observable } from 'rxjs';
-import { IHttpService, HttpService, GET, PATCH, Path, DefaultHeaders, ICartesianResponse } from '@cartesianui/core';
+import { IHttpService, HttpService, GET, PATCH, Path, DefaultHeaders, ICartesianResponse } from '@cartesianui/platform-core';
 import { Shift } from '../../models';
 
 // Extension type — declares custom methods
@@ -433,7 +433,7 @@ Spread the base actions with `additionalActions` containing custom action triple
 ```typescript
 // store/shift/actions.ts
 import { createAction, props } from '@ngrx/store';
-import { entityActions } from '@cartesianui/common';
+import { entityActions } from '@cartesianui/platform-common';
 import { Shift } from '../../models';
 
 const actions = entityActions<Shift, 'Shift'>('Shift');
@@ -470,7 +470,7 @@ Wrap the base reducer to handle custom actions. Use spread to replace the reduce
 
 ```typescript
 // store/shift/reducer.ts
-import { entityFeature } from '@cartesianui/common';
+import { entityFeature } from '@cartesianui/platform-common';
 import { Shift } from '../../models';
 import { ShiftActions } from './actions';
 
@@ -525,7 +525,7 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, EMPTY } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
-import { EntityEffect } from '@cartesianui/common';
+import { EntityEffect } from '@cartesianui/platform-common';
 import { ShiftActions } from './actions';
 import { Shift } from '../../models';
 import { IShiftHttpServiceExtension, ShiftHttpService } from '../../shared';
@@ -586,7 +586,7 @@ Add methods on the sandbox class that dispatch custom actions.
 // shift.sandbox.ts
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Sandbox, EntitySandbox } from '@cartesianui/common';
+import { Sandbox, EntitySandbox } from '@cartesianui/platform-common';
 import { fromShift, ShiftActions } from './store';
 import { Shift } from './models';
 
@@ -669,7 +669,7 @@ When a custom operation needs its own loading/success/error tracking (separate f
 
 ```typescript
 // store/visit/reducer.ts
-import { entityFeature, requestStarted, requestCompleted, requestFailed, RequestState, requestDefault } from '@cartesianui/common';
+import { entityFeature, requestStarted, requestCompleted, requestFailed, RequestState, requestDefault } from '@cartesianui/platform-common';
 import { createSelector } from '@ngrx/store';
 import { Visit } from '../../models';
 import { VisitActions } from './actions';

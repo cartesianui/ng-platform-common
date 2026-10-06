@@ -15,7 +15,7 @@ import {
   UiService,
   SessionService,
   HttpErrorService
-} from '@cartesianui/core';
+} from '@cartesianui/platform-core';
 import { ValidationService } from './form/validation';
 import { AppDialogService } from './widgets/dialog';
 import { ChildComponent, ChildComponentSelected } from './base.types';
