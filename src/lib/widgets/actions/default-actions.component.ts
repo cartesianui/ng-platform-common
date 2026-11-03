@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input, ContentChildren, QueryList } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
+import { ActionMenuItemComponent } from './action-menu-item.component';
 
 export type DisplayMode = 'icon' | 'text' | 'icon_text';
 
@@ -20,6 +21,23 @@ export class DefaultActionsComponent {
   @Input()
   set hide(hide: { [key: string]: boolean }) {
     this._hide = hide;
+  }
+
+  /**
+   * Projected `<action-menu-item>`s, rendered as ONE "Actions" dropdown left of Save (see
+   * `ActionMenuItemComponent` for usage). Items removed with `*ngIf` drop out of the list, and
+   * the dropdown disappears when none remain, so a page that projects no item is unchanged.
+   */
+  @ContentChildren(ActionMenuItemComponent, { descendants: true }) menuItems: QueryList<ActionMenuItemComponent>;
+
+  /** Non-danger items, in projection order. */
+  get regularMenuItems(): ActionMenuItemComponent[] {
+    return this.menuItems?.filter((item) => !item.danger) ?? [];
+  }
+
+  /** Danger items, listed last after a divider. */
+  get dangerMenuItems(): ActionMenuItemComponent[] {
+    return this.menuItems?.filter((item) => item.danger) ?? [];
   }
 
   @Input() display: DisplayMode = 'icon_text';
