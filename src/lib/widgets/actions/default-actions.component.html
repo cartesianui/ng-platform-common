@@ -20,50 +20,21 @@
     <!-- Right Side (Action Buttons) -->
     <div class="col-md-5">
       <div class="d-flex flex-wrap justify-content-end align-items-stretch gap-2">
-        <!-- Actions dropdown: every projected <action-menu-item> collected into ONE menu, kept
-             left of Save with an extra gap (me-3) so a secondary action is never a mis-click
-             away from Save. Danger items go last, after a divider. Hidden entirely when no item
-             is projected, so pages that project none render exactly as before. -->
-        <div *ngIf="menuItems?.length" class="btn-group me-3" dropdown placement="bottom right">
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary dropdown-toggle"
-            [ngClass]="getDisplayClasses()"
-            dropdownToggle
-            aria-label="Actions"
-            aria-haspopup="menu"
-          >
-            <i class="fa-solid fa-ellipsis-vertical" *ngIf="!showText()"></i>
-            <span *ngIf="showText()">Actions</span>
-          </button>
-          <!-- max-width caps the menu so a long item hint wraps (text-wrap on the item) instead of
-               stretching the menu; the menu is absolutely positioned, so it never widens the bar. -->
-          <ul *dropdownMenu class="dropdown-menu dropdown-menu-end" role="menu" style="max-width: 22rem">
-            <li *ngFor="let item of regularMenuItems" role="none" [attr.title]="item.hint || null">
-              <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
-            </li>
-            <li *ngIf="regularMenuItems.length && dangerMenuItems.length" role="separator"><hr class="dropdown-divider" /></li>
-            <li *ngFor="let item of dangerMenuItems" role="none" [attr.title]="item.hint || null">
-              <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
-            </li>
-          </ul>
-        </div>
-
         <ng-template #menuItemTpl let-item>
           <button
             type="button"
             role="menuitem"
-            class="dropdown-item d-flex align-items-center gap-2 text-wrap"
+            class="dropdown-item d-flex align-items-center gap-2 text-wrap py-2"
             [class.text-danger]="item.danger"
             [disabled]="item.isDisabled"
             [attr.aria-busy]="item.busy || null"
             [attr.title]="item.hint || null"
             (click)="item.choose($event)"
           >
-            <i [class]="item.icon" *ngIf="item.icon && !item.busy"></i>
-            <i class="fa-solid fa-spinner fa-spin" *ngIf="item.busy"></i>
+            <i [class]="item.icon" class="fa-fw" [class.text-primary]="!item.danger && !item.isDisabled" *ngIf="item.icon && !item.busy"></i>
+            <i class="fa-solid fa-spinner fa-spin fa-fw" *ngIf="item.busy"></i>
             <span>
-              <ng-container *ngTemplateOutlet="item.label"></ng-container>
+              <span class="fw-medium"><ng-container *ngTemplateOutlet="item.label"></ng-container></span>
               <small *ngIf="item.hint" class="d-block text-body-secondary fw-normal">{{ item.hint }}</small>
             </span>
           </button>
@@ -207,6 +178,44 @@
              row. Purely additive: no consumer projects anything today, so
              this is a no-op until one does. -->
         <ng-content></ng-content>
+
+        <!-- Actions dropdown: every projected <action-menu-item> collected into ONE menu, at the
+             RIGHT END of the bar (after Save, with an extra gap) so a secondary action is never a
+             mis-click away from Save. Same size as the other bar buttons (btn-sm, fills the row).
+             Danger items go last, after a divider. Hidden entirely when no item is projected, so
+             pages that project none render exactly as before. -->
+        <div *ngIf="menuItems?.length" class="dropdown d-flex ms-2" dropdown placement="bottom right">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary d-flex align-items-stretch p-0 h-100"
+            [ngClass]="getDisplayClasses()"
+            dropdownToggle
+            aria-label="Actions"
+            aria-haspopup="menu"
+          >
+            <!-- Looks like a split button — [ Actions | ⋮ ] — but is ONE toggle, so either part opens
+                 the menu. The wrapper is `.dropdown`, not `.btn-group`: in a btn-group the button is not
+                 the last child (the menu follows it), so Bootstrap squares its right corners. Three dots instead of the caret (no `dropdown-toggle`, which draws the arrow). -->
+            <span *ngIf="showText()" class="d-flex align-items-center px-2">Actions</span>
+            <span class="d-flex align-items-center px-2" [class.border-start]="showText()" [class.border-primary]="showText()">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </span>
+          </button>
+          <!-- The menu sizes to its content (width: max-content; min-width 0 overrides Bootstrap's 10rem),
+               capped by max-width so a long item hint wraps (text-wrap on the item); it is absolutely
+               positioned, so it never widens the bar. -->
+          <ul *dropdownMenu class="dropdown-menu dropdown-menu-end shadow-sm py-1" role="menu" style="min-width: 0; width: max-content; max-width: 22rem">
+            <li role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-body-secondary py-1">Actions</h6></li>
+            <li *ngFor="let item of regularMenuItems" role="none" [attr.title]="item.hint || null">
+              <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
+            </li>
+            <li *ngIf="regularMenuItems.length && dangerMenuItems.length" role="separator"><hr class="dropdown-divider" /></li>
+            <li *ngIf="dangerMenuItems.length" role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-danger py-1">Can't be undone</h6></li>
+            <li *ngFor="let item of dangerMenuItems" role="none" [attr.title]="item.hint || null">
+              <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- <action-menu-item> hosts render nothing themselves (their label is stamped into the
