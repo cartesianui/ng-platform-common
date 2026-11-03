@@ -14,8 +14,9 @@ import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { AlertModule } from 'ngx-bootstrap/alert';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { DatetimeService } from './services';
-import { LookupWidgetComponent, DefaultActionsComponent, AlertComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
+import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
 import { BaseComponent } from './base.component';
 import {
   RepeatableFormControlsComponent, RepeatableFormBaseComponent, RepeatableDirective,
@@ -57,7 +58,7 @@ const FORM_COMPONENTS = [ConfigurableFormComponent, ButtonComponent, InputCompon
 // `AlertComponent` is NOT here: it went standalone 2026-09-01 so standalone screens could use
 // it, and a standalone component is imported, never declared. It stays exported below, so all
 // 25 existing `<app-alert>` template usages are unaffected.
-const WIDGET_COMPONENTS = [LookupWidgetComponent, DefaultActionsComponent, ConfirmDialogComponent];
+const WIDGET_COMPONENTS = [LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, ConfirmDialogComponent];
 const COMMON_COMPONENTS = [
   BaseComponent, 
   RepeatableFormControlsComponent, 
@@ -78,6 +79,7 @@ const COMMON_COMPONENTS = [
     BsDatepickerModule,
     ModalModule.forRoot(),
     AlertModule.forRoot(),
+    BsDropdownModule,
     NgxDatatableModule,
     RegionalCurrencyPipe,
     FixedPopupPositionDirective,
