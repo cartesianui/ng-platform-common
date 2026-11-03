@@ -201,10 +201,10 @@
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </span>
           </button>
-          <!-- The menu sizes to its content (width: max-content; min-width 0 overrides Bootstrap's 10rem),
+          <!-- The menu sizes to its content (width: max-content) with a 12rem floor so a short menu doesn't look cramped,
                capped by max-width so a long item hint wraps (text-wrap on the item); it is absolutely
                positioned, so it never widens the bar. -->
-          <ul *dropdownMenu class="dropdown-menu dropdown-menu-end shadow-sm py-1" role="menu" style="min-width: 0; width: max-content; max-width: 22rem">
+          <ul *dropdownMenu class="dropdown-menu dropdown-menu-end shadow-sm py-1" role="menu" style="min-width: 12rem; width: max-content; max-width: 22rem">
             <li role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-body-secondary py-1">Actions</h6></li>
             <li *ngFor="let item of regularMenuItems" role="none" [attr.title]="item.hint || null">
               <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
