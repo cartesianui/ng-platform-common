@@ -58,7 +58,7 @@ import { Subscription, asapScheduler, observeOn } from 'rxjs';
               [disabled]="isDisabled()"
               (change)="onToggle(item, $event.target.checked)"
             />
-            <span [class.text-muted]="isDisabled()">{{ getOptionLabel(item) }}</span>
+            <span [class.text-muted]="isDisabled() && !(mode() === 'buttons' && isSelected(item))">{{ getOptionLabel(item) }}</span>
           </label>
         </div>
         <ng-template #noOptions>
