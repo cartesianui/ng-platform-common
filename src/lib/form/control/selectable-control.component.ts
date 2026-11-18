@@ -176,6 +176,14 @@ import { FixedPopupPositionDirective } from '../../directives';
         background-color: var(--cui-secondary-bg);
       }
 
+      /* Disabled through its form control (a locked form or row): the same look and blocked cursor
+         as read-only. Without this the wrapper kept the text cursor from :not([readonly]). */
+      .lookup-input-wrapper:has(input:disabled),
+      .lookup-input-wrapper:has(input:disabled) input {
+        cursor: not-allowed;
+        background-color: var(--cui-secondary-bg);
+      }
+
       .readonly-text {
         color: #495057;
       }
