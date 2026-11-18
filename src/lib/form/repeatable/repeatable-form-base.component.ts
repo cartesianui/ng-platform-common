@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Output, ChangeDetectionStrategy, input, Signal, computed, effect, Inject, Optional } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FormBaseComponent } from '../form-base.component';
 import { IHasForm } from '../../base.types';
 import { EntityStatic, ENTITY_CONSTRUCTOR } from '../../base.types';
@@ -52,6 +53,22 @@ export abstract class RepeatableFormBaseComponent<TEntity extends IHasForm<TEnti
       if (locked && this.formGroup.enabled) this.formGroup.disable({ emitEvent: false });
       if (!locked && this.formGroup.disabled) this.formGroup.enable({ emitEvent: false });
     });
+  }
+
+  /**
+   * Apply `locked` the moment a row's form is built.
+   *
+   * The lock effect in the constructor is created before a subclass's own `dataEffect` (a field
+   * initializer, which runs after `super()`), so on first render it finds no form, tracks only
+   * `locked()`, and never runs again: an edit row on a closed document stayed editable. Owner
+   * report 2026-11-18 (a system PV's lines could be focused, and a Cr line flipped to Dr). Every
+   * row builds through here, so disabling here covers every document's lines; the effect above
+   * still handles a later flip.
+   */
+  protected override getFormFromEntity(entity?: Partial<TEntity>): FormGroup {
+    const formGroup = super.getFormFromEntity(entity);
+    if (this.locked()) formGroup.disable({ emitEvent: false });
+    return formGroup;
   }
 
   /**
