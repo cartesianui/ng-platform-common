@@ -7,3 +7,4 @@ export * from './value-info/value-info.component';
 export * from './alert/alert.component';
 export * from './dialog';
 export * from './turnstile/turnstile.component';
+export * from './doc-totals-panel/doc-totals-panel.component';
