@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input, ContentChild, ContentChildren, QueryList } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy, Output, EventEmitter, OnChanges, SimpleChange, ViewChild, input, ContentChild, ContentChildren, QueryList, inject } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 import { ActionMenuItemComponent } from './action-menu-item.component';
 import { AttentionAction, AttentionComponent } from '../attention/attention.component';
+import { ACTIONS_HEADER_HOST, ActionsHeaderClaim } from './actions-header-host';
 
 export type DisplayMode = 'icon' | 'text' | 'icon_text';
 
@@ -11,7 +12,57 @@ export type DisplayMode = 'icon' | 'text' | 'icon_text';
     templateUrl: './default-actions.component.html',
     standalone: false
 })
-export class DefaultActionsComponent {
+export class DefaultActionsComponent implements AfterViewInit, OnDestroy {
+  /**
+   * Inside a container that offers its title bar (`app-offcanvas`), the whole row moves there, between
+   * the title and the close button, and the form body gets that height back. Elsewhere (routed pages,
+   * cards) nothing changes. `[inHeader]="false"` keeps the row in place inside a drawer.
+   */
+  @Input()
+  set inHeader(value: boolean) {
+    this._inHeader = value !== false;
+    this.syncHeader();
+  }
+  get inHeader(): boolean {
+    return this._inHeader;
+  }
+  private _inHeader = true;
+
+  @ViewChild('bar', { static: true }) private bar: ElementRef<HTMLElement>;
+  private readonly headerHost = inject(ACTIONS_HEADER_HOST, { optional: true });
+  private readonly hostEl: HTMLElement = inject(ElementRef).nativeElement;
+  private viewReady = false;
+  private claim?: ActionsHeaderClaim;
+
+  ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.syncHeader();
+  }
+
+  ngOnDestroy(): void {
+    this.viewReady = false;
+    this.syncHeader();
+  }
+
+  private syncHeader(): void {
+    const want = !!this.headerHost && this.viewReady && this._inHeader;
+    if (want && !this.claim) {
+      const el = this.bar.nativeElement;
+      this.claim = {
+        element: el,
+        home: this.hostEl,
+        placed: (inHeader) => {
+          el.classList.toggle('app-actions--header', inHeader);
+          el.classList.toggle('mb-2', !inHeader);
+        }
+      };
+      this.headerHost.claim(this.claim);
+    } else if (!want && this.claim) {
+      this.headerHost.release(this.claim);
+      this.claim = undefined;
+    }
+  }
+
   _disabled: { [key: string]: boolean };
   @Input()
   set disabled(disabled: { [key: string]: boolean }) {
