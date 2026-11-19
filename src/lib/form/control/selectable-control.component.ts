@@ -168,7 +168,7 @@ import { FixedPopupPositionDirective } from '../../directives';
 
       .lookup-input-wrapper:focus-within:not([readonly]) {
         border-color: var(--cui-primary);
-        box-shadow: 0 0 0 0.2rem var(--ct-ring, rgba(79, 70, 229, 0.25));
+        box-shadow: 0 0 0 0.2rem var(--ct-ring);
       }
 
       .lookup-input-wrapper[readonly] {
