@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input, ContentChildren, QueryList } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, input, ContentChild, ContentChildren, QueryList } from '@angular/core';
 import { WatchedEventEmitter } from './WatchedEventSubscriber';
 import { ActionMenuItemComponent } from './action-menu-item.component';
+import { AttentionAction, AttentionComponent } from '../attention/attention.component';
 
 export type DisplayMode = 'icon' | 'text' | 'icon_text';
 
@@ -29,6 +30,22 @@ export class DefaultActionsComponent {
    * the dropdown disappears when none remain, so a page that projects no item is unchanged.
    */
   @ContentChildren(ActionMenuItemComponent, { descendants: true }) menuItems: QueryList<ActionMenuItemComponent>;
+
+  /**
+   * The `<app-attention actionsStart>` chip, when a screen projects one. Its actionable alerts are
+   * mirrored at the top of the Actions menu and counted on the pointer, from the same registry the
+   * chip reads, so the two cannot disagree. None projected: nothing changes.
+   */
+  @ContentChild(AttentionComponent, { descendants: true }) attention?: AttentionComponent;
+
+  attentionActions(): AttentionAction[] {
+    return this.attention?.actions() ?? [];
+  }
+
+  actionsAriaLabel(): string {
+    const n = this.attentionActions().length;
+    return n ? `Actions, ${n} ${n === 1 ? 'action needs' : 'actions need'} attention` : 'Actions';
+  }
 
   /** Non-danger items, in projection order. */
   get regularMenuItems(): ActionMenuItemComponent[] {

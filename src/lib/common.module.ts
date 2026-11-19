@@ -16,7 +16,7 @@ import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { AlertModule } from 'ngx-bootstrap/alert';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { DatetimeService } from './services';
-import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
+import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, AttentionComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
 import { BaseComponent } from './base.component';
 import {
   RepeatableFormControlsComponent, RepeatableFormBaseComponent, RepeatableDirective,
@@ -85,11 +85,12 @@ const COMMON_COMPONENTS = [
     FixedPopupPositionDirective,
     AccessibleDirective,
     AlertComponent,
+    AttentionComponent,
   ],
   // `AccessibleDirective` moved to `imports`: it is standalone as of 2026-09-01 so that
   // standalone components can gate on it, and a standalone directive is imported, never declared.
   declarations: [TimeSincePipe, FormatPipe, BusyDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
-  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, ...COMMON_COMPONENTS]
+  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, AttentionComponent, ...COMMON_COMPONENTS]
 })
 export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {

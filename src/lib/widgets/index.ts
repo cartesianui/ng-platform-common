@@ -5,6 +5,8 @@ export * from './search-panel/search-panel.component';
 export * from './image-thumb/image-thumb.component';
 export * from './value-info/value-info.component';
 export * from './alert/alert.component';
+export * from './attention/attention-host';
+export * from './attention/attention.component';
 export * from './dialog';
 export * from './turnstile/turnstile.component';
 export * from './doc-totals-panel/doc-totals-panel.component';
