@@ -21,7 +21,11 @@ export class AppDatatableComponent {
   @Input() rows: any[] = [];
   @Input() columns: any[] = [];
   @Input() headers: { name: string; prop?: string }[] = [];
-  @Input() count: number = 0;
+  // Listings pass `sb.x.pagination()?.total`, which is undefined until the first
+  // page lands (or when the response has no pagination meta). ngx-datatable then
+  // renders "0 selected / NaN total". `footerCount` below falls back to the row
+  // count (0 for an empty listing) so the footer always shows a number.
+  @Input() count: number | null | undefined = 0;
   @Input() offset: number = 0;
   @Input() limit: number = 30;
 
@@ -55,6 +59,13 @@ export class AppDatatableComponent {
 
   // === Content Projection ===
   @ContentChildren(DatatableColumnDirective) customColumns: QueryList<DatatableColumnDirective>;
+
+  /** The total ngx-datatable shows: `count` when it is a real number, else the rows on hand. */
+  get footerCount(): number {
+    const n = Number(this.count);
+    if (this.count !== null && this.count !== undefined && Number.isFinite(n)) return n;
+    return this.rows?.length ?? 0;
+  }
 
   // === NgxDatatable Reference ===
   @ViewChild('dtTable') table: NgxDatatableComponent;
