@@ -41,6 +41,8 @@ export class AppDatatableComponent {
   @Input() sortType: string = 'single';
   @Input() showCheckboxColumn: boolean = true;
   @Input() detailRowHeight: number | string = 'auto';
+  /** Text shown when there are no rows. Callers can pass a friendlier, entity-specific line. */
+  @Input() emptyMessage: string = 'No records found';
 
   // === Outputs ===
   @Output() selectChange = new EventEmitter<any>();

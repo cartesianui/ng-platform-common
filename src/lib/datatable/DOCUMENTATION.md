@@ -118,6 +118,7 @@ Shared wrapper that replaces ~50 lines of repeated ngx-datatable boilerplate in 
 | `sortType` | `string` | `'single'` | Sort mode |
 | `showCheckboxColumn` | `boolean` | `true` | Show checkbox select column |
 | `detailRowHeight` | `number \| string` | `'auto'` | Row-detail expanded height |
+| `emptyMessage` | `string` | `'No records found'` | Text shown when there are no rows |
 | `detailTemplate` | `TemplateRef` | `null` | Template for expandable row detail |
 
 ### Outputs
