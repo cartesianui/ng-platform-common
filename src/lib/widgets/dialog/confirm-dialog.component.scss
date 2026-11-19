@@ -3,24 +3,24 @@
 // classes so we control spacing + tone without fighting Bootstrap's
 // defaults.
 .app-dialog {
-  --app-dialog-accent: var(--cui-primary, #5856d6);
-  --app-dialog-accent-soft: rgba(88, 86, 214, 0.08);
+  --app-dialog-accent: var(--cui-primary);
+  --app-dialog-accent-soft: rgba(var(--cui-primary-rgb), 0.08);
 
   &.app-dialog--info {
-    --app-dialog-accent: var(--cui-info, #39f);
-    --app-dialog-accent-soft: rgba(51, 153, 255, 0.08);
+    --app-dialog-accent: var(--cui-info);
+    --app-dialog-accent-soft: rgba(var(--cui-info-rgb), 0.08);
   }
   &.app-dialog--success {
-    --app-dialog-accent: var(--cui-success, #2eb85c);
-    --app-dialog-accent-soft: rgba(46, 184, 92, 0.10);
+    --app-dialog-accent: var(--cui-success);
+    --app-dialog-accent-soft: rgba(var(--cui-success-rgb), 0.10);
   }
   &.app-dialog--warning {
-    --app-dialog-accent: #e0a800; // slightly deeper than Bootstrap's #ffc107 for legibility
-    --app-dialog-accent-soft: rgba(255, 193, 7, 0.12);
+    --app-dialog-accent: var(--cui-warning); // theme warning (#b8730a) is already the legible, deeper amber
+    --app-dialog-accent-soft: rgba(var(--cui-warning-rgb), 0.12);
   }
   &.app-dialog--danger {
-    --app-dialog-accent: var(--cui-danger, #e55353);
-    --app-dialog-accent-soft: rgba(229, 83, 83, 0.10);
+    --app-dialog-accent: var(--cui-danger);
+    --app-dialog-accent-soft: rgba(var(--cui-danger-rgb), 0.10);
   }
 
   &__header {
@@ -56,7 +56,7 @@
   &__title-text {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--cui-body-color, #2a2c36);
+    color: var(--cui-body-color);
     letter-spacing: 0.01em;
     line-height: 1.2;
   }
@@ -66,7 +66,7 @@
     background: transparent;
     border: 0;
     padding: 0.25rem 0.5rem;
-    color: var(--cui-body-color, #2a2c36);
+    color: var(--cui-body-color);
     opacity: 0.55;
     cursor: pointer;
     transition: opacity 120ms ease;
@@ -83,7 +83,7 @@
     padding: 1.125rem 1.25rem;
     font-size: 0.875rem;
     line-height: 1.55;
-    color: var(--cui-body-color, #2a2c36);
+    color: var(--cui-body-color);
     max-height: calc(100vh - 220px);
     overflow-y: auto;
 
@@ -94,8 +94,8 @@
     code {
       display: inline-block;
       padding: 0.05em 0.45em;
-      background: var(--cui-tertiary-bg, #f0f1f4);
-      color: var(--cui-body-color, #2a2c36);
+      background: var(--cui-tertiary-bg);
+      color: var(--cui-body-color);
       border-radius: 3px;
       font-size: 0.78em;
       font-weight: 600;
@@ -118,8 +118,8 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 0.75rem 1.25rem;
-    background: var(--cui-tertiary-bg, #f8f9fb);
-    border-top: 1px solid var(--cui-border-color-translucent, rgba(0, 0, 0, 0.08));
+    background: var(--cui-tertiary-bg);
+    border-top: 1px solid var(--cui-border-color-translucent);
 
     .btn {
       min-width: 5.5rem;
