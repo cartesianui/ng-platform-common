@@ -169,7 +169,19 @@ export class DocNumberComponent {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
 
+  /** Fallback toggle (owner): 5 clicks on the number within 2s switch developer mode. */
+  private clicks: number[] = [];
+  private countToggleClick(): void {
+    const now = Date.now();
+    this.clicks = [...this.clicks.filter((t) => now - t < 2000), now];
+    if (this.clicks.length >= 5) {
+      this.clicks = [];
+      this.devMode.toggle();
+    }
+  }
+
   protected async copy(which: 'number' | 'id'): Promise<void> {
+    if (which === 'number') this.countToggleClick();
     const v = which === 'number' ? this.value() : this.id();
     if (isEmpty(v)) return;
     if (!(await this.write(String(v)))) return;
