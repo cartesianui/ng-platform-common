@@ -21,7 +21,8 @@ const isEmpty = (v: unknown): boolean => v === null || v === undefined || v === 
  * http `*.localhost`, where the Clipboard API is missing or refused, so it falls
  * back to a hidden textarea plus `document.execCommand('copy')`.
  *
- * With developer mode on (`DevModeService`, Ctrl+Shift+Alt+U) and `id` set, a second
+ * With developer mode on (`DevModeService`; toggle it by clicking the number 5 times within 2s,
+ * the documented way, or Ctrl+Shift+Alt+U where the OS allows) and `id` set, a second
  * small icon button (fingerprint, "Copy ID") follows and copies the record id, with the
  * same feedback and fallback. The two buttons are siblings, never nested.
  *
@@ -169,7 +170,7 @@ export class DocNumberComponent {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
 
-  /** Fallback toggle (owner): 5 clicks on the number within 2s switch developer mode. */
+  /** The documented developer-mode toggle (owner): 5 clicks on the number within 2s. */
   private clicks: number[] = [];
   private countToggleClick(): void {
     const now = Date.now();
