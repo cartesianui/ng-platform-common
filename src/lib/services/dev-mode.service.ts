@@ -13,7 +13,8 @@ export const DEV_MODE_STORAGE_KEY = 'cui.devMode';
  * Off by default and remembered in localStorage. Storage is optional: blocked or
  * missing storage just means the flag starts off and is not remembered.
  *
- * Toggle: Ctrl+Shift+Alt+U, matched on `event.code === 'KeyU'` so the keyboard layout
+ * Toggle: Ctrl+Shift+Alt+U (anywhere, including text fields), or 5 quick clicks on a
+ * `<doc-number>` copy icon (fallback when an OS tool grabs the shortcut), matched on `event.code === 'KeyU'` so the keyboard layout
  * does not matter. Why this combo:
  *  - Ctrl+Alt+U is AltGr+U on Windows (it types ú on US-International and similar
  *    layouts), and Ctrl+Option is the VoiceOver modifier on macOS (VO+U opens the Rotor).
@@ -60,22 +61,14 @@ export class DevModeService {
 
   private onKeydown(event: KeyboardEvent): void {
     if (event.code !== 'KeyU' || !event.ctrlKey || !event.altKey || !event.shiftKey || event.metaKey) return;
-    if (event.repeat || this.isTextEntry(event.target)) return;
+    // Works ANYWHERE, text fields included (owner: drawers auto-focus an input, so a guard that
+    // skipped text entry made the shortcut look dead). preventDefault() also stops the stray
+    // "Ú" that AltGr+Shift+U would type on some Windows layouts.
+    if (event.repeat) return;
     event.preventDefault();
     this.toggle();
   }
 
-  /** Inputs that accept typed text, textareas, selects and contenteditable regions. */
-  private isTextEntry(target: EventTarget | null): boolean {
-    const el = target as HTMLElement | null;
-    if (!el || typeof el.tagName !== 'string') return false;
-    if (el.isContentEditable) return true;
-    const tag = el.tagName.toLowerCase();
-    if (tag === 'textarea' || tag === 'select') return true;
-    if (tag !== 'input') return false;
-    const type = ((el as HTMLInputElement).type || 'text').toLowerCase();
-    return !['button', 'checkbox', 'radio', 'submit', 'reset', 'file', 'image', 'range', 'color'].includes(type);
-  }
 
   private read(): boolean {
     try {
