@@ -20,7 +20,7 @@ const DEFAULT_ICONS: Record<ValueInfo['tone'], string> = {
 };
 
 /**
- * Reactive info box driven by a bound value.
+ * Reactive info hint driven by a bound value (muted text, tone on the icon).
  *
  * Use whenever a form control's selected value carries information the user
  * should see *before* saving — a status with downstream consequences, a
