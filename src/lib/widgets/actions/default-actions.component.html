@@ -1,7 +1,7 @@
 <div class="app-actions mb-2">
   <div class="row g-2 align-items-stretch">
     <!-- Left Side (Search) -->
-    <div class="col-md-7 justify-content-start">
+    <div class="col-md justify-content-start">
       <div class="d-flex flex-wrap align-items-stretch gap-2">
         <!-- Search Bar -->
         <div *ngIf="searchChange.subscriberCount" class="input-group" style="width: 240px">
@@ -13,15 +13,17 @@
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
-        <!-- Edit screens leave this column empty (search is a listing affair). Screens project
-             their `<app-attention actionsStart>` chip here; nothing projected renders nothing. -->
-        <ng-content select="[actionsStart]"></ng-content>
       </div>
     </div>
 
     <!-- Right Side (Action Buttons) -->
-    <div class="col-md-5">
+    <!-- `col-md-auto`: the right group takes the width its buttons need (the attention chip made
+         5/12 too narrow at 1366); the left column (search on listings) takes the rest. -->
+    <div class="col-md-auto">
       <div class="d-flex flex-wrap justify-content-end align-items-stretch gap-2">
+        <!-- The attention chip (owner): right-aligned, immediately left of Save, grouped with the
+             actions. Screens project `<app-attention actionsStart>`; nothing projected renders nothing. -->
+        <ng-content select="[actionsStart]"></ng-content>
         <ng-template #menuItemTpl let-item>
           <button
             type="button"
@@ -202,7 +204,7 @@
             <!-- The attention pointer: how many alert actions wait in the menu, from the chip's own
                  registry. Inside the button: `.bounded-form` clips overflow, so a corner badge is cut. -->
             <span *ngIf="attentionActions().length" class="d-flex align-items-center pe-2" aria-hidden="true">
-              <span class="badge rounded-pill" [ngClass]="'text-bg-' + attention?.severity()">{{ attentionActions().length }}</span>
+              <span class="attention-count" [attr.data-severity]="attention?.severity()">{{ attentionActions().length }}</span>
             </span>
             <span class="d-flex align-items-center px-2" [class.border-start]="showText()" [class.border-primary]="showText()">
               <i class="fa-solid fa-ellipsis-vertical"></i>

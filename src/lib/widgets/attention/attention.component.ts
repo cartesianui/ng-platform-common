@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, Input, ViewChild, computed, forwardRef, signal } from '@angular/core';
+import { effect, ChangeDetectionStrategy, Component, ElementRef, HostListener, Input, ViewChild, computed, forwardRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ATTENTION_HOST, AttentionHost, AttentionItem } from './attention-host';
 
@@ -26,6 +26,8 @@ export interface AttentionAction {
   kind: string;
   disabled: boolean;
   run(): void;
+  /** The alert's own button behind this action (internal: lets the chip hide the promoted one in the panel). */
+  element?: HTMLButtonElement;
 }
 
 /**
@@ -82,7 +84,8 @@ export interface AttentionAction {
         <button
           #counter
           type="button"
-          class="btn btn-sm app-attention__counter d-inline-flex align-items-center gap-1"
+          class="btn btn-sm app-attention__counter d-inline-flex align-items-center gap-2"
+          [attr.data-severity]="severity()"
           aria-haspopup="dialog"
           [attr.aria-expanded]="open()"
           [attr.aria-controls]="panelId"
@@ -90,8 +93,9 @@ export interface AttentionAction {
           [attr.title]="summaries()"
           (click)="toggle()"
         >
-          <i [class]="counterIcon() + ' text-' + severity()" aria-hidden="true"></i>
-          <span>{{ count() }}</span>
+          <i [class]="counterIcon() + ' app-attention__icon'" aria-hidden="true"></i>
+          <span class="attention-count" [attr.data-severity]="severity()">{{ count() }}</span>
+          <i class="fa-solid fa-chevron-down app-attention__caret" aria-hidden="true"></i>
         </button>
         @if (primary(); as action) {
           <button type="button" class="btn btn-sm btn-outline-primary app-attention__action text-nowrap" [disabled]="action.disabled" (click)="action.run()">
@@ -126,19 +130,76 @@ export interface AttentionAction {
         font-weight: 600;
         letter-spacing: 0.01em;
       }
+      /* The counter reads as an attention control (owner): a soft tint of the most severe alert's
+         colour, the icon in that colour, the count as a pill, and a caret that says it opens.
+         Its border matches the action half (outline-primary) so the two read as ONE group. */
       .app-attention__counter {
-        color: var(--ct-text);
-        background-color: var(--ct-surface);
-        border: 1px solid var(--ct-border);
+        --att-rgb: var(--cui-warning-rgb);
+        color: var(--cui-body-color);
+        background-color: rgba(var(--att-rgb), 0.12);
+        border: 1px solid var(--cui-primary);
+        cursor: pointer;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       }
-      .app-attention__counter:hover,
-      .app-attention--open .app-attention__counter {
-        background-color: var(--ct-surface-2);
+      .app-attention__counter[data-severity='danger'] { --att-rgb: var(--cui-danger-rgb); }
+      .app-attention__counter[data-severity='info'] { --att-rgb: var(--cui-info-rgb); }
+      .app-attention__counter[data-severity='success'] { --att-rgb: var(--cui-success-rgb); }
+      /* Hover: a stronger tint and a heavier edge in the alert's colour. Pressed/open
+         (aria-expanded): the strongest tint, so the open state reads as "on". */
+      .app-attention__counter:hover {
+        background-color: rgba(var(--att-rgb), 0.22);
+        border-color: var(--cui-primary);
+        box-shadow: inset 0 -2px 0 rgba(var(--att-rgb), 0.55);
       }
+      .app-attention__counter:active,
+      .app-attention__counter[aria-expanded='true'] {
+        background-color: rgba(var(--att-rgb), 0.3);
+        border-color: var(--cui-primary);
+        box-shadow: inset 0 -2px 0 rgb(var(--att-rgb));
+      }
+      .app-attention__counter:focus-visible {
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(var(--cui-primary-rgb), 0.25);
+        z-index: 2;
+      }
+      .app-attention__icon { color: rgb(var(--att-rgb)); }
+      .app-attention__caret {
+        font-size: 0.7em;
+        opacity: 0.7;
+        transition: transform 0.15s ease;
+      }
+      .app-attention--open .app-attention__caret { transform: rotate(180deg); }
+      /* Attention count badge (owner): a circle (pill from 10+), light text on the severity's
+         *emphasis* tone. Contrast: white on --cui-warning (#b8730a) is 3.8:1 and fails, so the fill is
+         --cui-{severity}-text-emphasis (#764705 in light = 7.9:1 with white). In dark mode that token is
+         the light tone, and the text is --cui-body-bg (dark), so it passes both ways. Same in the chip. */
+      .attention-count {
+        --att-fill: var(--cui-warning-text-emphasis);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.125rem;
+        height: 1.125rem;
+        padding: 0 0.3rem;
+        border-radius: 999px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--cui-body-bg);
+        /* Mixed toward the body text colour: darker in light mode (white text 5.6:1 on amber),
+           lighter in dark mode (dark --cui-body-bg text). The emphasis tokens alone are the plain
+           severity colour in this theme, and white on --cui-warning is only 3.8:1. */
+        background-color: color-mix(in srgb, var(--att-fill) 72%, var(--cui-body-color));
+      }
+      .attention-count[data-severity="danger"] { --att-fill: var(--cui-danger-text-emphasis); }
+      .attention-count[data-severity="info"] { --att-fill: var(--cui-info-text-emphasis); }
+      .attention-count[data-severity="success"] { --att-fill: var(--cui-success-text-emphasis); }
       .app-attention__panel {
         position: absolute;
         top: calc(100% + 0.375rem);
-        left: 0;
+        /* The chip sits on the right of the action bar: open toward the start so the panel stays inside the drawer. */
+        right: 0;
+        left: auto;
         z-index: 1060;
         width: min(32rem, calc(100vw - 2rem));
         padding-bottom: 0.25rem;
@@ -194,7 +255,8 @@ export class AttentionComponent implements AttentionHost {
           get disabled() {
             return button.disabled;
           },
-          run: () => button.click()
+          run: () => button.click(),
+          element: button
         });
       }
     }
@@ -207,7 +269,17 @@ export class AttentionComponent implements AttentionHost {
   @ViewChild('counter') private counterRef?: ElementRef<HTMLButtonElement>;
   @ViewChild('panel') private panelRef?: ElementRef<HTMLElement>;
 
-  constructor(private readonly el: ElementRef<HTMLElement>) {}
+  constructor(private readonly el: ElementRef<HTMLElement>) {
+    // The action joined to the counter is not repeated inside the panel (owner): hide that one
+    // button in its alert while it is promoted. Other actions of the same or other alerts stay.
+    // It stays clickable programmatically (run() and the Actions menu click the same element).
+    effect(() => {
+      const promoted = this.primary()?.element;
+      for (const action of this.actions()) {
+        action.element?.classList.toggle('d-none', action.element === promoted);
+      }
+    });
+  }
 
   register(item: AttentionItem): void {
     const before = this.items().length;

@@ -48,3 +48,28 @@
     }
   }
 }
+/* Attention count badge (owner): a circle (pill from 10+), light text on the severity's
+   *emphasis* tone. Contrast: white on --cui-warning (#b8730a) is 3.8:1 and fails, so the fill is
+   --cui-{severity}-text-emphasis (#764705 in light = 7.9:1 with white). In dark mode that token is
+   the light tone, and the text is --cui-body-bg (dark), so it passes both ways. Same in the chip. */
+.attention-count {
+  --att-fill: var(--cui-warning-text-emphasis);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--cui-body-bg);
+  /* Mixed toward the body text colour: darker in light mode (white text 5.6:1 on amber),
+     lighter in dark mode (dark --cui-body-bg text). The emphasis tokens alone are the plain
+     severity colour in this theme, and white on --cui-warning is only 3.8:1. */
+  background-color: color-mix(in srgb, var(--att-fill) 72%, var(--cui-body-color));
+}
+.attention-count[data-severity="danger"] { --att-fill: var(--cui-danger-text-emphasis); }
+.attention-count[data-severity="info"] { --att-fill: var(--cui-info-text-emphasis); }
+.attention-count[data-severity="success"] { --att-fill: var(--cui-success-text-emphasis); }
