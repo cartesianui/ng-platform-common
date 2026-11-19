@@ -120,7 +120,7 @@ import { FixedPopupPositionDirective } from '../../directives';
          without borrowing that class, which is reserved for form-validation
          state and would be misread by anything inspecting validity. */
       .lookup-error {
-        color: var(--ct-form-invalid-color, var(--bs-danger, #dc3545));
+        color: var(--ct-form-invalid-color, var(--ct-danger));
       }
 
       /* Match the global .form-control input style (white surface, light
@@ -163,12 +163,12 @@ import { FixedPopupPositionDirective } from '../../directives';
         color: var(--ct-text, inherit);
       }
       .lookup-input-wrapper input::placeholder {
-        color: var(--ct-text-faint, #9298ad);
+        color: var(--ct-text-faint);
       }
 
       .lookup-input-wrapper:focus-within:not([readonly]) {
         border-color: var(--cui-primary);
-        box-shadow: 0 0 0 0.2rem var(--ct-ring, rgba(79, 70, 229, 0.25));
+        box-shadow: 0 0 0 0.2rem var(--ct-ring);
       }
 
       .lookup-input-wrapper[readonly] {
@@ -185,7 +185,7 @@ import { FixedPopupPositionDirective } from '../../directives';
       }
 
       .readonly-text {
-        color: #495057;
+        color: var(--ct-text-muted);
       }
 
       .badge {

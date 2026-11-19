@@ -110,14 +110,14 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
         color: var(--ct-text, inherit);
       }
       .sc-placeholder {
-        color: var(--ct-text-faint, #9298ad);
+        color: var(--ct-text-faint);
       }
 
       .sc-clear {
         flex: none;
         border: 0;
         background: transparent;
-        color: var(--ct-text-faint, #9298ad);
+        color: var(--ct-text-faint);
         font-size: 1.15rem;
         line-height: 1;
         padding: 0 0.15rem;
@@ -133,8 +133,8 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
         width: 0.55rem;
         height: 0.55rem;
         margin-left: auto;
-        border-right: 2px solid var(--ct-text-muted, #6c757d);
-        border-bottom: 2px solid var(--ct-text-muted, #6c757d);
+        border-right: 2px solid var(--ct-text-muted);
+        border-bottom: 2px solid var(--ct-text-muted);
         transform: rotate(45deg) translate(-2px, -2px);
         transition: transform 0.15s ease;
       }
@@ -181,7 +181,7 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
       .sc-empty {
         padding: 0.5rem 0.65rem;
         font-size: 0.875rem;
-        color: var(--ct-text-faint, #9298ad);
+        color: var(--ct-text-faint);
       }
     `
   ]
