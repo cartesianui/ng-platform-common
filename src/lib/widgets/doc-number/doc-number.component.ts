@@ -1,8 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { DevModeService } from '../../services/dev-mode.service';
 
 /** How long the "Copied" state stays before the copy icon comes back. */
 const COPIED_MS = 1500;
+
+const isEmpty = (v: unknown): boolean => v === null || v === undefined || v === '';
 
 /**
  * A document number (SO-000123, INV-000045, JV-000310 …) shown as monospace text
@@ -18,11 +21,15 @@ const COPIED_MS = 1500;
  * http `*.localhost`, where the Clipboard API is missing or refused, so it falls
  * back to a hidden textarea plus `document.execCommand('copy')`.
  *
+ * With developer mode on (`DevModeService`, Ctrl+Shift+Alt+U) and `id` set, a second
+ * small icon button (fingerprint, "Copy ID") follows and copies the record id, with the
+ * same feedback and fallback. The two buttons are siblings, never nested.
+ *
  * Renders nothing when `value` is empty, so the caller keeps its own fallback:
  *
  * @example
  *   @if (salesOrder()?.documentNumber) {
- *     <doc-number [value]="salesOrder()?.documentNumber"></doc-number>
+ *     <doc-number [value]="salesOrder()?.documentNumber" [id]="salesOrder()?.id"></doc-number>
  *   } @else {
  *     <strong>Details</strong>
  *   }
@@ -36,13 +43,13 @@ const COPIED_MS = 1500;
       <button
         type="button"
         class="doc-number btn btn-link p-0 text-reset text-decoration-none"
-        [class.is-copied]="copied()"
+        [class.is-copied]="copied() === 'number'"
         [attr.aria-label]="'Copy ' + value()"
-        (click)="copy()"
+        (click)="copy('number')"
       >
         <strong class="font-monospace">{{ value() }}</strong>
         <span class="doc-number__icon" aria-hidden="true">
-          @if (copied()) {
+          @if (copied() === 'number') {
             <i class="fa-solid fa-check"></i>
             <span class="doc-number__tip">Copied</span>
           } @else {
@@ -50,13 +57,33 @@ const COPIED_MS = 1500;
           }
         </span>
       </button>
-      <span class="visually-hidden" aria-live="polite">{{ copied() ? 'Copied ' + value() : '' }}</span>
+      @if (showId()) {
+        <button
+          type="button"
+          class="doc-number doc-number--id btn btn-link p-0 text-reset text-decoration-none"
+          [class.is-copied]="copied() === 'id'"
+          aria-label="Copy document ID"
+          title="Copy ID"
+          (click)="copy('id')"
+        >
+          <span class="doc-number__icon" aria-hidden="true">
+            @if (copied() === 'id') {
+              <i class="fa-solid fa-check"></i>
+              <span class="doc-number__tip">Copied</span>
+            } @else {
+              <i class="fa-solid fa-fingerprint"></i>
+            }
+          </span>
+        </button>
+      }
+      <span class="visually-hidden" aria-live="polite">{{ announcement() }}</span>
     }
   `,
   styles: `
     :host {
       display: inline-flex;
       align-items: center;
+      gap: 0.5rem;
       min-width: 0;
     }
 
@@ -116,24 +143,39 @@ const COPIED_MS = 1500;
 })
 export class DocNumberComponent {
   private readonly document = inject(DOCUMENT);
+  private readonly devMode = inject(DevModeService);
   private timer: ReturnType<typeof setTimeout> | undefined;
 
   /** The document number to show and copy. Empty, null or undefined renders nothing. */
   readonly value = input<string | number | null | undefined>(undefined);
 
-  protected readonly copied = signal(false);
+  /** The record's id. With developer mode on, a "Copy ID" button copies it. */
+  readonly id = input<string | number | null | undefined>(undefined);
+
+  /** Which value was just copied, for the ~1.5s feedback. */
+  protected readonly copied = signal<'number' | 'id' | null>(null);
+
+  protected readonly showId = computed(() => this.devMode.enabled() && !isEmpty(this.id()));
+
+  protected readonly announcement = computed(() => {
+    switch (this.copied()) {
+      case 'number': return 'Copied ' + this.value();
+      case 'id': return 'Copied document ID ' + this.id();
+      default: return '';
+    }
+  });
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
 
-  protected async copy(): Promise<void> {
-    const v = this.value();
-    if (v === null || v === undefined || v === '') return;
+  protected async copy(which: 'number' | 'id'): Promise<void> {
+    const v = which === 'number' ? this.value() : this.id();
+    if (isEmpty(v)) return;
     if (!(await this.write(String(v)))) return;
-    this.copied.set(true);
+    this.copied.set(which);
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.copied.set(false), COPIED_MS);
+    this.timer = setTimeout(() => this.copied.set(null), COPIED_MS);
   }
 
   private async write(text: string): Promise<boolean> {
