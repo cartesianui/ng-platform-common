@@ -1,5 +1,5 @@
 import { CommonModule as AngularCommonModule } from '@angular/common';
-import { NgModule, ModuleWithProviders } from '@angular/core';
+import { NgModule, ModuleWithProviders, inject, provideEnvironmentInitializer } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeSincePipe, FormatPipe, RegionalCurrencyPipe } from './pipes';
@@ -15,7 +15,7 @@ import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { AlertModule } from 'ngx-bootstrap/alert';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
-import { DatetimeService } from './services';
+import { DatetimeService, DevModeService } from './services';
 import { DocNumberComponent } from './widgets/doc-number/doc-number.component';
 import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, AttentionComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
 import { BaseComponent } from './base.component';
@@ -98,7 +98,10 @@ export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {
     return {
       ngModule: CommonModule,
-      providers: [DatetimeService, ValidationService, BsModalService, AppDialogService]
+      // The environment initializer creates `DevModeService` at boot, so its one app-wide
+      // developer-mode shortcut (Ctrl+Shift+Alt+U) works on every screen, not only after
+      // the first `<doc-number>` renders.
+      providers: [DatetimeService, ValidationService, BsModalService, AppDialogService, provideEnvironmentInitializer(() => { inject(DevModeService); })]
     };
   }
   static forFeature(): ModuleWithProviders<CommonModule> {
