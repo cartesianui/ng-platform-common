@@ -71,6 +71,9 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
           role="option"
           [class.sc-option--active]="i === activeIndex()"
           [class.sc-option--selected]="keyOf(o) === value()"
+          [class.sc-option--disabled]="isDisabled(o)"
+          [attr.aria-disabled]="isDisabled(o) ? 'true' : null"
+          [attr.title]="isDisabled(o) ? hintOf(o) : null"
           [attr.aria-selected]="keyOf(o) === value()"
           (click)="select(o)"
           (mouseenter)="activeIndex.set(i)"
@@ -168,6 +171,11 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
         color: var(--ct-text);
         cursor: pointer;
       }
+      /* A disabled option (optionDisabled): shown, muted, not choosable; its hint is the tooltip. */
+      .sc-option--disabled {
+        color: var(--ct-text-faint);
+        cursor: not-allowed;
+      }
       .sc-option--active {
         background-color: var(--ct-surface-3);
       }
@@ -197,6 +205,14 @@ export class SelectControlComponent implements ControlValueAccessor {
   optionField = input<string>('name');
   placeholder = input<string>('Select...');
   readonly = input<boolean>(false);
+  /**
+   * Property that marks an option as not choosable right now. Default `disabled`. Such an option
+   * is listed, muted, with `aria-disabled`; clicks and Enter on it are ignored and the arrow keys
+   * skip it. Options without the property behave exactly as before.
+   */
+  optionDisabled = input<string>('disabled');
+  /** Property holding why an option is disabled, shown as its tooltip. Default `hint`. */
+  optionHint = input<string>('hint');
   /** Show an `×` to reset the value to null. Default true. */
   clearable = input<boolean>(true);
 
@@ -229,6 +245,22 @@ export class SelectControlComponent implements ControlValueAccessor {
     return o == null ? '' : String(o);
   }
 
+  isDisabled(o: any): boolean {
+    return o !== null && typeof o === 'object' && !!o[this.optionDisabled()];
+  }
+  hintOf(o: any): string | null {
+    return o !== null && typeof o === 'object' ? (o[this.optionHint()] ?? null) : null;
+  }
+
+  /** Next choosable option index from `from` in direction `step`, or `from` if there is none. */
+  private nextEnabled(from: number, step: 1 | -1): number {
+    const opts = this.options() ?? [];
+    for (let i = from + step; i >= 0 && i < opts.length; i += step) {
+      if (!this.isDisabled(opts[i])) return i;
+    }
+    return from;
+  }
+
   toggle(): void {
     if (this.readonly() || this.disabled()) return;
     this.open.update((v) => !v);
@@ -243,6 +275,7 @@ export class SelectControlComponent implements ControlValueAccessor {
   }
 
   select(o: any): void {
+    if (this.isDisabled(o)) return;
     const key = this.keyOf(o);
     this.value.set(key);
     this.onChange(key);
@@ -278,11 +311,12 @@ export class SelectControlComponent implements ControlValueAccessor {
         break;
       case 'ArrowDown':
         ev.preventDefault();
-        this.activeIndex.update((i) => Math.min(i + 1, opts.length - 1));
+        this.activeIndex.update((i) => this.nextEnabled(i, 1));
         break;
       case 'ArrowUp':
         ev.preventDefault();
-        this.activeIndex.update((i) => Math.max(i - 1, 0));
+        // From nothing active, ArrowUp lands on the first choosable option (as it did before).
+        this.activeIndex.update((i) => (i < 0 ? this.nextEnabled(-1, 1) : this.nextEnabled(i, -1)));
         break;
       case 'Enter': {
         ev.preventDefault();
