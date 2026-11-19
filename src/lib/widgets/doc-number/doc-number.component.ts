@@ -93,11 +93,13 @@ const COPIED_MS = 1500;
       opacity: 1;
     }
 
+    /* The tip sits to the RIGHT of the icon, not above it: edit headers live in
+       .bounded-form columns that clip overflow, which cut off a tip placed above. */
     .doc-number__tip {
       position: absolute;
-      bottom: calc(100% + 0.375rem);
-      left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      left: calc(100% + 0.375rem);
+      transform: translateY(-50%);
       padding: 0.125rem 0.5rem;
       font-family: var(--cui-body-font-family);
       font-size: 0.75rem;
