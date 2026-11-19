@@ -2,6 +2,15 @@ import { Component, ContentChild, Input, TemplateRef, Output, EventEmitter, Quer
 import { RepeatableDirective } from './repeatable.directive';
 import { ROW_VALID_KEY } from '../validation/validation.types';
 
+/** One add button on a `<repeatable-form>` that offers several kinds of row. */
+export interface RepeatableAddOption {
+  label: string;
+  /** Font Awesome icon name, without the `fa-solid` prefix. Defaults to `fa-plus`. */
+  icon?: string;
+  /** Values the new row starts with. */
+  seed: Record<string, any>;
+}
+
 @Component({
     selector: 'repeatable-form',
     styleUrls: ['./repeatable-from-controls.component.scss'],
@@ -22,10 +31,18 @@ import { ROW_VALID_KEY } from '../validation/validation.types';
       </div>
     </div>
 
-    <div *ngIf="!readonly" class="repeatable-add">
+    <div *ngIf="!readonly && !addOptions?.length" class="repeatable-add">
       <button type="button" class="btn repeatable-add__btn" (click)="add()">
         <i class="fa-solid fa-plus"></i>
         <span *ngIf="addLabel" class="repeatable-add__label">{{ addLabel }}</span>
+      </button>
+    </div>
+
+    <!-- One add button per kind of row, each seeding its row (see addOptions). -->
+    <div *ngIf="!readonly && addOptions?.length" class="repeatable-add d-flex gap-2" role="group">
+      <button *ngFor="let option of addOptions" type="button" class="btn repeatable-add__btn" (click)="add(option.seed)">
+        <i [class]="'fa-solid ' + (option.icon || 'fa-plus')"></i>
+        <span class="repeatable-add__label">{{ option.label }}</span>
       </button>
     </div>
 
@@ -41,6 +58,17 @@ export class RepeatableFormControlsComponent<TDataModel> {
 
   /** Optional label for the add button (e.g. "Add item"). Empty = icon only. */
   @Input() addLabel: string = '';
+
+  /**
+   * Several add buttons instead of the one above, each seeding the new row with
+   * its own values, e.g. a billing line that is a product, a service or typed by
+   * hand: `[{ label: 'Add product', seed: { sourceType: 'product_sku' } }, ...]`.
+   *
+   * Empty (the default) keeps the single `addLabel` button exactly as before, so
+   * every existing caller is unchanged. `icon` is a Font Awesome name without
+   * the `fa-solid` prefix; it defaults to `fa-plus`.
+   */
+  @Input() addOptions: RepeatableAddOption[] = [];
 
   /**
    * Show the rows, but offer no way to change the SET of them (UF-P1.6).
@@ -144,7 +172,7 @@ export class RepeatableFormControlsComponent<TDataModel> {
     this.dataChange.emit(newData);
   }
 
-  add() {
+  add(seed?: Record<string, any>) {
     // QA Q6-B7/B9 — mark the fresh row INCOMPLETE up front.
     //
     // This row is created here, in the container, and handed to the parent
@@ -155,7 +183,10 @@ export class RepeatableFormControlsComponent<TDataModel> {
     //
     // Rows arriving from the server are deliberately left unmarked and are
     // treated as complete: they were persisted, so they validated once.
-    const newItem = {} as TDataModel;
+    //
+    // A seed (from `addOptions`) only pre-fills values; the row is still
+    // incomplete until its own form says otherwise.
+    const newItem = { ...(seed ?? {}) } as TDataModel;
     Object.defineProperty(newItem, ROW_VALID_KEY, {
       value: false,
       enumerable: false,
