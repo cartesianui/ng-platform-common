@@ -7,7 +7,7 @@ import { TimeSincePipe, FormatPipe, RegionalCurrencyPipe } from './pipes';
 // `RegionalCurrencyPipe` is standalone — consumers import it directly
 // from `@cartesianui/platform-common`. Including it in the imports array here
 // re-exports it for module-based consumers.
-import { BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective } from './directives';
+import { BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, LockedDatepickerDirective } from './directives';
 
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { TypeaheadModule } from 'ngx-bootstrap/typeahead';
@@ -85,6 +85,7 @@ const COMMON_COMPONENTS = [
     RegionalCurrencyPipe,
     DocNumberComponent,
     FixedPopupPositionDirective,
+    LockedDatepickerDirective,
     AccessibleDirective,
     AlertComponent,
     AttentionComponent,
@@ -92,7 +93,7 @@ const COMMON_COMPONENTS = [
   // `AccessibleDirective` moved to `imports`: it is standalone as of 2026-09-01 so that
   // standalone components can gate on it, and a standalone directive is imported, never declared.
   declarations: [TimeSincePipe, FormatPipe, BusyDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
-  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, AttentionComponent, DocNumberComponent, ...COMMON_COMPONENTS]
+  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, LockedDatepickerDirective, AlertComponent, AttentionComponent, DocNumberComponent, ...COMMON_COMPONENTS]
 })
 export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {
