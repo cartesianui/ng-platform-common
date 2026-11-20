@@ -67,7 +67,19 @@ export class FixedPopupPositionDirective implements AfterViewInit, OnDestroy {
       this.renderer.setStyle(popup, 'top', `${rect.bottom + 2}px`, important);
       this.renderer.setStyle(popup, 'left', `${rect.left}px`, important);
       if (isTypeahead) {
-        this.renderer.setStyle(popup, 'width', `${rect.width}px`, important);
+        // At least the trigger's width, but as wide as the suggestions need (owner: in a narrow
+        // line-grid cell the list was cut to the cell, "Amoxicillin 500mg (BL…", with a sideways
+        // scrollbar). Capped to the viewport, and nudged left if it would run off the right edge.
+        const gutter = 16;
+        const maxWidth = Math.max(rect.width, Math.min(576, window.innerWidth - 2 * gutter));
+        this.renderer.setStyle(popup, 'width', 'max-content', important);
+        this.renderer.setStyle(popup, 'min-width', `${rect.width}px`, important);
+        this.renderer.setStyle(popup, 'max-width', `${maxWidth}px`, important);
+        this.renderer.setStyle(popup, 'overflow-x', 'hidden', important);
+        const overflowRight = rect.left + popup.offsetWidth - (window.innerWidth - gutter);
+        if (overflowRight > 0) {
+          this.renderer.setStyle(popup, 'left', `${Math.max(gutter, rect.left - overflowRight)}px`, important);
+        }
       }
       this.renderer.setStyle(popup, 'transform', 'none', important);
     };

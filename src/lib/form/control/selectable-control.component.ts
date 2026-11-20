@@ -151,6 +151,10 @@ import { FixedPopupPositionDirective } from '../../directives';
         will-change: auto !important;
         width: 100%;
       }
+      /* Long names wrap inside the list instead of forcing a sideways scrollbar. */
+      :host ::ng-deep typeahead-container .dropdown-item {
+        white-space: normal;
+      }
 
       .lookup-input-wrapper:not([readonly]) {
         cursor: text;
