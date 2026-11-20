@@ -1,3 +1,12 @@
+<!--
+  Projected content is captured ONCE, here, and stamped by whichever variant is active. An
+  `<ng-content>` cannot sit in more than one `@if` branch: Angular projects at compile time, so
+  the second slot with the same selector would silently receive nothing.
+-->
+<ng-template #content><ng-content></ng-content></ng-template>
+<ng-template #actions><ng-content select="[alertActions]"></ng-content></ng-template>
+
+@if (variant === 'banner') {
 <alert [type]="kind" [dismissible]="dismissible" (onClose)="onClosed()">
   <div class="d-flex align-items-start gap-2">
     <i *ngIf="icon" [class]="icon + ' mt-1'"></i>
@@ -16,7 +25,7 @@
         read out of order.
       -->
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <div class="flex-grow-1"><ng-content></ng-content></div>
+        <div class="flex-grow-1"><ng-container *ngTemplateOutlet="content"></ng-container></div>
 
         <!-- inline mode: the sentence rides on the same line rather than earning a control. -->
         <span *ngIf="inlineDetail as line" class="text-muted small">{{ line }}</span>
@@ -33,7 +42,7 @@
           <span class="ms-1 text-muted" *ngIf="!expanded() && details.length > 1">({{ details.length }})</span>
         </button>
 
-        <ng-content select="[alertActions]"></ng-content>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
       </div>
 
       <!--
@@ -49,3 +58,38 @@
     </div>
   </div>
 </alert>
+}
+
+@if (variant === 'item') {
+  <!--
+    A row in the attention panel (`<app-attention>`): icon, title, message, the explanation
+    always shown (the panel IS the "why"), then the caller's own action buttons.
+  -->
+  <div class="app-alert-item">
+    <div class="app-alert-item__body">
+      <i [class]="(icon || defaultIcon) + ' text-' + kind + ' mt-1'" aria-hidden="true"></i>
+      <div class="flex-grow-1 small">
+        <div #message class="app-alert-item__message">
+          <span *ngIf="title" class="fw-semibold">{{ title }}</span>
+          <ng-container *ngTemplateOutlet="content"></ng-container>
+        </div>
+        <div *ngIf="hasDetails" class="text-body-secondary mt-1">
+          <span class="fw-semibold">{{ detailsLabel }}</span>
+          <span *ngFor="let line of details" class="ms-1">{{ line }}</span>
+        </div>
+      </div>
+    </div>
+    <div #actionsBox class="app-alert-item__actions"><ng-container *ngTemplateOutlet="actions"></ng-container></div>
+  </div>
+}
+
+@if (variant === 'note') {
+  <!-- The muted one-liner, in value-info's grammar: secondary text, only the icon carries the tone. -->
+  <div class="form-text text-body-secondary d-flex align-items-start gap-2 mt-1 mb-2" role="note">
+    <i [class]="(icon || defaultIcon) + ' text-' + kind + ' mt-1'" aria-hidden="true"></i>
+    <div class="small">
+      <span *ngIf="title" class="fw-semibold text-body">{{ title }}.</span>
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </div>
+  </div>
+}

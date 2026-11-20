@@ -74,10 +74,10 @@ label {
     &:has(input:checked) {
       background: var(--cui-primary);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-      color: var(--ct-on-primary, #fff);
+      color: var(--ct-on-primary);
 
       span {
-        color: var(--ct-on-primary, #fff);
+        color: var(--ct-on-primary);
       }
     }
   }

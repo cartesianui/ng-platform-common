@@ -1,5 +1,5 @@
 import { CommonModule as AngularCommonModule } from '@angular/common';
-import { NgModule, ModuleWithProviders } from '@angular/core';
+import { NgModule, ModuleWithProviders, inject, provideEnvironmentInitializer } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeSincePipe, FormatPipe, RegionalCurrencyPipe } from './pipes';
@@ -15,8 +15,9 @@ import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { AlertModule } from 'ngx-bootstrap/alert';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
-import { DatetimeService } from './services';
-import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
+import { DatetimeService, DevModeService } from './services';
+import { DocNumberComponent } from './widgets/doc-number/doc-number.component';
+import { LookupWidgetComponent, DefaultActionsComponent, ActionMenuItemComponent, AlertComponent, AttentionComponent, ConfirmDialogComponent, AppDialogService } from './widgets';
 import { BaseComponent } from './base.component';
 import {
   RepeatableFormControlsComponent, RepeatableFormBaseComponent, RepeatableDirective,
@@ -82,20 +83,25 @@ const COMMON_COMPONENTS = [
     BsDropdownModule,
     NgxDatatableModule,
     RegionalCurrencyPipe,
+    DocNumberComponent,
     FixedPopupPositionDirective,
     AccessibleDirective,
     AlertComponent,
+    AttentionComponent,
   ],
   // `AccessibleDirective` moved to `imports`: it is standalone as of 2026-09-01 so that
   // standalone components can gate on it, and a standalone directive is imported, never declared.
   declarations: [TimeSincePipe, FormatPipe, BusyDirective, DecimalFormatDirective, ...COMMON_COMPONENTS],
-  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, ...COMMON_COMPONENTS]
+  exports: [TimeSincePipe, FormatPipe, RegionalCurrencyPipe, BusyDirective, AccessibleDirective, DecimalFormatDirective, FixedPopupPositionDirective, AlertComponent, AttentionComponent, DocNumberComponent, ...COMMON_COMPONENTS]
 })
 export class CommonModule {
   static forRoot(): ModuleWithProviders<CommonModule> {
     return {
       ngModule: CommonModule,
-      providers: [DatetimeService, ValidationService, BsModalService, AppDialogService]
+      // The environment initializer creates `DevModeService` at boot, so its one app-wide
+      // developer-mode shortcut (Ctrl+Shift+Alt+U) works on every screen, not only after
+      // the first `<doc-number>` renders.
+      providers: [DatetimeService, ValidationService, BsModalService, AppDialogService, provideEnvironmentInitializer(() => { inject(DevModeService); })]
     };
   }
   static forFeature(): ModuleWithProviders<CommonModule> {

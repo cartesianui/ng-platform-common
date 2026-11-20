@@ -1,7 +1,7 @@
-<div class="app-actions mb-2">
+<div #bar class="app-actions mb-2">
   <div class="row g-2 align-items-stretch">
     <!-- Left Side (Search) -->
-    <div class="col-md-7 justify-content-start">
+    <div class="col-md justify-content-start">
       <div class="d-flex flex-wrap align-items-stretch gap-2">
         <!-- Search Bar -->
         <div *ngIf="searchChange.subscriberCount" class="input-group" style="width: 240px">
@@ -13,13 +13,17 @@
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
-
       </div>
     </div>
 
     <!-- Right Side (Action Buttons) -->
-    <div class="col-md-5">
+    <!-- `col-md-auto`: the right group takes the width its buttons need (the attention chip made
+         5/12 too narrow at 1366); the left column (search on listings) takes the rest. -->
+    <div class="col-md-auto">
       <div class="d-flex flex-wrap justify-content-end align-items-stretch gap-2">
+        <!-- The attention chip (owner): right-aligned, immediately left of Save, grouped with the
+             actions. Screens project `<app-attention actionsStart>`; nothing projected renders nothing. -->
+        <ng-content select="[actionsStart]"></ng-content>
         <ng-template #menuItemTpl let-item>
           <button
             type="button"
@@ -184,19 +188,24 @@
              mis-click away from Save. Same size as the other bar buttons (btn-sm, fills the row).
              Danger items go last, after a divider. Hidden entirely when no item is projected, so
              pages that project none render exactly as before. -->
-        <div *ngIf="menuItems?.length" class="dropdown d-flex ms-2" dropdown placement="bottom right">
+        <div *ngIf="menuItems?.length || attentionActions().length" class="dropdown d-flex ms-2" dropdown placement="bottom right">
           <button
             type="button"
             class="btn btn-sm btn-outline-primary d-flex align-items-stretch p-0 h-100"
             [ngClass]="getDisplayClasses()"
             dropdownToggle
-            aria-label="Actions"
+            [attr.aria-label]="actionsAriaLabel()"
             aria-haspopup="menu"
           >
             <!-- Looks like a split button — [ Actions | ⋮ ] — but is ONE toggle, so either part opens
                  the menu. The wrapper is `.dropdown`, not `.btn-group`: in a btn-group the button is not
                  the last child (the menu follows it), so Bootstrap squares its right corners. Three dots instead of the caret (no `dropdown-toggle`, which draws the arrow). -->
             <span *ngIf="showText()" class="d-flex align-items-center px-2">Actions</span>
+            <!-- The attention pointer: how many alert actions wait in the menu, from the chip's own
+                 registry. Inside the button: `.bounded-form` clips overflow, so a corner badge is cut. -->
+            <span *ngIf="attentionActions().length" class="d-flex align-items-center pe-2" aria-hidden="true">
+              <span class="attention-count" [attr.data-severity]="attention?.severity()">{{ attentionActions().length }}</span>
+            </span>
             <span class="d-flex align-items-center px-2" [class.border-start]="showText()" [class.border-primary]="showText()">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </span>
@@ -205,7 +214,24 @@
                capped by max-width so a long item hint wraps (text-wrap on the item); it is absolutely
                positioned, so it never widens the bar. -->
           <ul *dropdownMenu class="dropdown-menu dropdown-menu-end shadow-sm py-1" role="menu" style="min-width: 12rem; width: max-content; max-width: 22rem">
-            <li role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-body-secondary py-1">Actions</h6></li>
+            <!-- Alert actions first, marked like the chip. Each runs the alert's own button. -->
+            <ng-container *ngIf="attentionActions().length">
+              <li role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-body-secondary py-1">Needs attention</h6></li>
+              <li *ngFor="let action of attentionActions()" role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="dropdown-item d-flex align-items-center gap-2 text-wrap py-2"
+                  [disabled]="action.disabled"
+                  (click)="action.run()"
+                >
+                  <i [class]="action.icon + ' fa-fw text-' + action.kind"></i>
+                  <span class="fw-medium">{{ action.label }}</span>
+                </button>
+              </li>
+              <li *ngIf="menuItems?.length" role="separator"><hr class="dropdown-divider" /></li>
+            </ng-container>
+            <li *ngIf="menuItems?.length" role="presentation"><h6 class="dropdown-header text-uppercase small fw-semibold text-body-secondary py-1">Actions</h6></li>
             <li *ngFor="let item of regularMenuItems" role="none" [attr.title]="item.hint || null">
               <ng-container *ngTemplateOutlet="menuItemTpl; context: { $implicit: item }"></ng-container>
             </li>
